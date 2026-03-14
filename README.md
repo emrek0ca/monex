@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# 🏦 Monex - AI Destekli Kişisel Finans Yönetimi
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Monex, harcamalarınızı takip etmenizi, bütçeler oluşturmanızı ve yapay zeka desteği ile finansal durumunuzu analiz etmenizi sağlayan modern bir web uygulamasıdır.
 
-Currently, two official plugins are available:
+## ✨ Özellikler
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 💰 **Hesap Yönetimi:** Tüm banka, nakit ve yatırım hesaplarınızı tek yerden takip edin.
+- 📊 **Akıllı Analizler:** Gelir ve giderlerinizi grafiklerle detaylıca inceleyin.
+- 🤖 **Wiqo AI Asistan:** Finansal durumunuz hakkında sorular sorun, harcama tahminleri alın.
+- 🎯 **Hedef Takibi:** Tasarruf hedefleri belirleyin ve ilerlemenizi izleyin.
+- 🛡️ **Güvenlik:** Verileriniz banka seviyesinde şifreleme (AES-256) ile korunur.
+- 🌐 **Çok Dil Desteği:** Türkçe ve İngilizce dil seçenekleri.
 
-## React Compiler
+## 🔐 Ortam Değişkenleri (.env)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Uygulamayı çalıştırmadan önce kök dizinde bir `.env` dosyası oluşturun ve aşağıdaki değişkenleri tanımlayın:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_POCKETBASE_URL=https://api.witlydesign.com
+VITE_GROQ_API_KEY=your_groq_api_key_here
+VITE_ENCRYPTION_KEY=your_secure_random_string_here
+VITE_ADMIN_EMAILS=admin@monex.com
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Kurulum ve Çalıştırma
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Projeyi klonlayın
+git clone https://github.com/emrek0ca/monex.git
+cd monex
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Bağımlılıkları yükleyin
+npm install
+
+# Geliştirme sunucusunu başlatın
+npm run dev
+
+# Production build alın
+npm run build
 ```
+
+## 🛡️ Güvenlik Notları
+
+- **Veri Şifreleme:** Tarayıcıda saklanan hassas veriler `VITE_ENCRYPTION_KEY` kullanılarak AES-256 ile şifrelenir.
+- **XSS Koruması:** Tüm kullanıcı girişleri DOMPurify ile sanitize edilir.
+- **CSP:** İçerik Güvenlik Politikası (Content Security Policy) ile dış saldırılara karşı korunur.
+
+---
+Developed by **Osman Emre Koca**

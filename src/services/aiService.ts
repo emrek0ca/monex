@@ -7,7 +7,10 @@ export type ChatMessage = {
     content: string;
 };
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''; // Should be set in .env
+// WARNING: GROQ_API_KEY is exposed on the client side. 
+// In a production environment, AI requests should be proxied through a secure backend 
+// (e.g., PocketBase hooks or a separate Edge Function) to keep the API key hidden.
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''; 
 const AI_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are Wiqo, an AI financial advisor for Monex.

@@ -11,15 +11,22 @@
 import CryptoJS from 'crypto-js';
 import DOMPurify from 'dompurify';
 
-// Encryption key - In production, this should come from environment variables
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'monex-secure-key-2024';
+// Encryption key - Must be set in environment variables for production
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
+
+if (!ENCRYPTION_KEY && import.meta.env.PROD) {
+    console.error('CRITICAL SECURITY ERROR: VITE_ENCRYPTION_KEY is not defined in production!');
+}
+
+// Fallback for development only - NEVER use this in production
+const SECURE_KEY = ENCRYPTION_KEY || 'dev-secure-key-do-not-use-in-prod-2024';
 
 /**
  * Encrypt sensitive data before storing
  */
 export function encryptData(data: string): string {
     try {
-        return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY).toString();
+        return CryptoJS.AES.encrypt(data, SECURE_KEY).toString();
     } catch (error) {
         console.error('Encryption failed:', error);
         return '';
@@ -31,7 +38,7 @@ export function encryptData(data: string): string {
  */
 export function decryptData(encryptedData: string): string {
     try {
-        const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
+        const bytes = CryptoJS.AES.decrypt(encryptedData, SECURE_KEY);
         return bytes.toString(CryptoJS.enc.Utf8);
     } catch (error) {
         console.error('Decryption failed:', error);

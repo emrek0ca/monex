@@ -53,7 +53,7 @@ export default function Dashboard() {
         queryFn: async () => {
             return pb.collection('monex_transactions').getFullList<MonexTransactionsResponse>({
                 sort: '-date',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user?.id })
             });
         },
         enabled: !!user,
@@ -76,7 +76,7 @@ export default function Dashboard() {
         queryFn: async () => {
             return pb.collection(Collections.MonexAccounts).getFullList<MonexAccountsResponse>({
                 sort: 'name',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user?.id })
             });
         },
         enabled: !!user,
@@ -88,7 +88,7 @@ export default function Dashboard() {
         queryFn: async () => {
             return pb.collection(Collections.MonexGoals).getFullList<MonexGoalsResponse>({
                 sort: 'deadline',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user?.id })
             });
         },
         enabled: !!user,
@@ -100,7 +100,7 @@ export default function Dashboard() {
         queryFn: async () => {
             return pb.collection(Collections.MonexBudgets).getFullList<MonexBudgetsResponse>({
                 sort: '-created',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user?.id })
             });
         },
         enabled: !!user,

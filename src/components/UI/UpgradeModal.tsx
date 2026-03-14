@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { LemonSqueezyService } from '@/services/lemonSqueezy.service';
 import { useUserStore } from '@/store/userStore';
 import { SUBSCRIPTION_PRICES } from '@/store/subscriptionStore';
+import { PaymentModal } from '@/components/Modals/PaymentModal';
 
 interface UpgradeModalProps {
     isOpen: boolean;
@@ -30,6 +31,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
     const { user } = useUserStore();
     const [isYearly, setIsYearly] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [showManualPayment, setShowManualPayment] = useState(false);
 
     const monthlyPrice = SUBSCRIPTION_PRICES.pro.monthly;
     const yearlyPrice = SUBSCRIPTION_PRICES.pro.yearly;
@@ -200,6 +202,13 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                                     {t('upgrade.upgradeNow')}
                                 </Button>
 
+                                <button
+                                    onClick={() => setShowManualPayment(true)}
+                                    className="w-full mt-3 py-2 text-xs text-white/40 hover:text-white/70 transition-colors"
+                                >
+                                    Havale/EFT ile ödemek için tıklayın
+                                </button>
+
                                 {/* Payment Method Info */}
                                 <div className="mt-4 text-center space-y-1">
                                     <p className="text-[11px] text-white/50">
@@ -215,6 +224,10 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                 )}
             </AnimatePresence>
 
+            <PaymentModal
+                isOpen={showManualPayment}
+                onClose={() => setShowManualPayment(false)}
+            />
         </>
     );
 }
