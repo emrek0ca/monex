@@ -246,6 +246,13 @@ export const en = {
         wiqoInsightDefault: 'Check your financial status and get one step closer to your goals.',
         wiqoInsightPro: 'You can save 15% on subscription spending compared to last month. Details on analytics.',
         wiqoInsightFree: 'Upgrade to Pro for AI-powered spending predictions.',
+        insights: {
+            highVelocity: 'Your spending speed is %{{percent}} higher than last month. Slowing down might be good.',
+            topCategory: 'You spent the most on {{category}} this month.',
+            goodSaving: 'Great job! You saved %{{rate}} of your income this month.',
+            noData: 'As you add more transactions, I can generate personalized insights for you.',
+            overBudget: 'You are about to exceed your {{category}} budget, be careful!',
+        },
         budgetUsage: 'Budget Usage',
         budgetFullness: 'Usage',
         budgetStatusBalanced: 'Spending Balanced',

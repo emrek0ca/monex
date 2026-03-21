@@ -21,7 +21,10 @@ import {
     ArrowRight,
     Zap,
     BarChart3,
-    Settings
+    Settings,
+    AlertCircle,
+    CheckCircle2,
+    Info
 } from 'lucide-react';
 import { Button } from '@/components/UI/Button';
 import { pb } from '@/api/client';
@@ -36,6 +39,7 @@ import { AddTransactionModal } from '@/components/Modals';
 import { motion } from 'framer-motion';
 import { useUserStore } from '@/store/userStore';
 import { AIAssistant } from '@/components/Dashboard/AIAssistant';
+import { FinanceUtils } from '@/utils/finance';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -48,7 +52,7 @@ export default function Dashboard() {
     const dateLocale = i18n.language === 'tr' ? tr : enUS;
 
     // Limit history based on tier
-    const historyLimitDays = isPremium ? 10000 : 7; // Pro/Pro+ get effectively unlimited history
+    const historyLimitDays = isPremium ? 10000 : 7;
 
     // Fetch all transactions
     const { data: allTransactions = [], isLoading: txLoading } = useQuery({
@@ -62,10 +66,8 @@ export default function Dashboard() {
         enabled: !!user,
     });
 
-    // Tier-based transaction filter
     const transactions = useMemo(() => {
         if (isPremium) return allTransactions;
-
         const now = new Date();
         return allTransactions.filter(tx => {
             const txDate = new Date(tx.date || '');
@@ -73,7 +75,6 @@ export default function Dashboard() {
         });
     }, [allTransactions, isPremium, historyLimitDays]);
 
-    // Fetch accounts
     const { data: accounts = [], isLoading: accLoading } = useQuery({
         queryKey: ['accounts', user?.id],
         queryFn: async () => {
@@ -85,7 +86,6 @@ export default function Dashboard() {
         enabled: !!user,
     });
 
-    // Fetch goals
     const { data: goals = [] } = useQuery({
         queryKey: ['goals', user?.id],
         queryFn: async () => {
@@ -97,7 +97,6 @@ export default function Dashboard() {
         enabled: !!user,
     });
 
-    // Fetch budgets
     const { data: budgets = [] } = useQuery({
         queryKey: ['budgets', user?.id],
         queryFn: async () => {
@@ -109,7 +108,6 @@ export default function Dashboard() {
         enabled: !!user,
     });
 
-    // Calculate statistics
     const stats = useMemo(() => {
         const now = new Date();
         const currentMonthStart = startOfMonth(now);
@@ -147,14 +145,44 @@ export default function Dashboard() {
 
         const recentTx = transactions.slice(0, 5);
 
+        // Calculate proactive insight
+        let proactiveInsight = {
+            text: t('dashboard.wiqoInsightDefault'),
+            type: 'info' as 'info' | 'warning' | 'success',
+            icon: Sparkles
+        };
 
-        const incomeTrendData = [40, 70, 45, 90, 65, 80, 95]; // Static placeholders for visual wow
-        const expenseTrendData = [30, 45, 35, 50, 40, 60, 55];
-
-        const upcomingGoal = goals.find(g => {
-            const deadline = g.deadline ? new Date(g.deadline) : null;
-            return deadline && deadline > now && (g.currentAmount || 0) < (g.targetAmount || 0);
-        });
+        if (transactions.length > 0) {
+            if (expenseTrend > 20) {
+                proactiveInsight = {
+                    text: t('dashboard.insights.highVelocity', { percent: expenseTrend.toFixed(0) }),
+                    type: 'warning',
+                    icon: AlertCircle
+                };
+            } else if (savingsRate > 15) {
+                proactiveInsight = {
+                    text: t('dashboard.insights.goodSaving', { rate: savingsRate.toFixed(0) }),
+                    type: 'success',
+                    icon: CheckCircle2
+                };
+            } else {
+                // Find top category
+                const categories: Record<string, number> = {};
+                currentMonthTx.forEach(tx => {
+                    if (tx.type === 'expense' && tx.category) {
+                        categories[tx.category] = (categories[tx.category] || 0) + (tx.amount || 0);
+                    }
+                });
+                const topCat = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+                if (topCat) {
+                    proactiveInsight = {
+                        text: t('dashboard.insights.topCategory', { category: topCat[0] }),
+                        type: 'info',
+                        icon: Info
+                    };
+                }
+            }
+        }
 
         return {
             totalBalance,
@@ -162,19 +190,19 @@ export default function Dashboard() {
             currentExpense,
             incomeTrend,
             expenseTrend,
-            incomeTrendData,
-            expenseTrendData,
+            incomeTrendData: [40, 70, 45, 90, 65, 80, 95],
+            expenseTrendData: [30, 45, 35, 50, 40, 60, 55],
             savingsRate,
             goalsProgress,
             budgetUsage,
             recentTx,
-            upcomingGoal,
             accountCount: accounts.length,
             goalCount: goals.length,
             budgetCount: budgets.length,
-            isHistoryRestricted: !isPremium && allTransactions.length > transactions.length
+            isHistoryRestricted: !isPremium && allTransactions.length > transactions.length,
+            proactiveInsight
         };
-    }, [transactions, allTransactions.length, accounts, goals, budgets, isPremium]);
+    }, [transactions, allTransactions.length, accounts, goals, budgets, isPremium, t]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
@@ -184,9 +212,7 @@ export default function Dashboard() {
         }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
     };
 
-    const isLoading = txLoading || accLoading;
-
-    if (isLoading) {
+    if (txLoading || accLoading) {
         return (
             <div className="flex h-full items-center justify-center min-h-[400px]">
                 <div className="text-center">
@@ -203,18 +229,16 @@ export default function Dashboard() {
             <AddTransactionModal isOpen={showAddTransaction} onClose={() => setShowAddTransaction(false)} />
             <AIAssistant />
 
-            {/* Hero Header - Executive Apple Aesthetic */}
+            {/* Hero Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="relative overflow-hidden rounded-[3rem] bg-white border border-gray-100 p-10 sm:p-14 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.05)] mb-10"
             >
-                {/* Refined Background Textures */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px] -translate-y-1/2 translate-x-1/2 animate-pulse" />
                 <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2" />
 
                 <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                    {/* Welcome Text Section - Column 7 */}
                     <div className="lg:col-span-7 space-y-8">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
@@ -249,7 +273,6 @@ export default function Dashboard() {
                             )}
                         </div>
 
-                        {/* Executive Buttons */}
                         <div className="flex flex-wrap gap-4 pt-4">
                             <Button
                                 onClick={() => setShowAddTransaction(true)}
@@ -271,7 +294,6 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Integrated Net Worth Station - Column 5 */}
                     <div className="lg:col-span-5 relative">
                         <div className="absolute -inset-10 bg-blue-500/5 blur-[100px] rounded-full" />
                         <motion.div
@@ -313,9 +335,8 @@ export default function Dashboard() {
                 </div>
             </motion.div>
 
-            {/* Executive Stats Grid */}
+            {/* Stats Grid */}
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                {/* Monthly Income */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileHover={{ y: -5, scale: 1.01 }}
@@ -339,7 +360,6 @@ export default function Dashboard() {
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t('transactions.income')}</p>
                         <h3 className="text-3xl font-black text-[#1D1D1F] tracking-tight">{formatCurrency(stats.currentIncome)}</h3>
                     </div>
-                    {/* Refined Sparkline */}
                     <div className="mt-8 h-10 w-full opacity-20 border-t border-gray-50 pt-4">
                         <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
                             <path
@@ -354,7 +374,6 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Monthly Expense */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileHover={{ y: -5, scale: 1.01 }}
@@ -378,7 +397,6 @@ export default function Dashboard() {
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t('transactions.expense')}</p>
                         <h3 className="text-3xl font-black text-[#1D1D1F] tracking-tight">{formatCurrency(stats.currentExpense)}</h3>
                     </div>
-                    {/* Refined Sparkline */}
                     <div className="mt-8 h-10 w-full opacity-20 border-t border-gray-50 pt-4">
                         <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
                             <path
@@ -393,7 +411,6 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Savings Rate */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileHover={{ y: -5, scale: 1.01 }}
@@ -426,7 +443,6 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Budget Status */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileHover={{ y: -5, scale: 1.01 }}
@@ -470,9 +486,8 @@ export default function Dashboard() {
                 </motion.div>
             </div>
 
-            {/* Main Content Grid */}
+            {/* Main Content */}
             <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-                {/* Chart Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -499,14 +514,12 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Side Panel */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
                     className="space-y-6"
                 >
-                    {/* Gamification Stats */}
                     {user && (
                         <GamificationCard
                             xp={user.xp || 0}
@@ -515,19 +528,22 @@ export default function Dashboard() {
                         />
                     )}
 
-                    {/* Proactive AI Insight */}
+                    {/* Proactive AI Insight - Refined */}
                     <motion.div
                         whileHover={{ scale: 1.02 }}
-                        className="relative overflow-hidden rounded-[2.5rem] p-8 bg-[#1D1D1F] text-white shadow-[0_20px_40px_rgba(0,0,0,0.1)] border border-white/5"
+                        className={cn(
+                            "relative overflow-hidden rounded-[2.5rem] p-8 text-white shadow-[0_20px_40px_rgba(0,0,0,0.1)] border",
+                            stats.proactiveInsight.type === 'warning' ? "bg-rose-600 border-rose-500" :
+                            stats.proactiveInsight.type === 'success' ? "bg-emerald-600 border-emerald-500" :
+                            "bg-[#1D1D1F] border-white/5"
+                        )}
                     >
                         <div className="flex items-center gap-2 mb-3">
-                            <Sparkles className="h-4 w-4 text-amber-300" />
+                            <stats.proactiveInsight.icon className="h-4 w-4" />
                             <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">{t('dashboard.wiqoInsight')}</span>
                         </div>
                         <p className="text-sm font-medium leading-relaxed italic">
-                            "{plan === 'pro_plus'
-                                ? t('dashboard.wiqoInsightPro')
-                                : t('dashboard.wiqoInsightFree')}"
+                            "{stats.proactiveInsight.text}"
                         </p>
                     </motion.div>
 
@@ -564,69 +580,10 @@ export default function Dashboard() {
                             </Button>
                         </div>
                     </div>
-
-                    {/* Upcoming Goal */}
-                    {stats.upcomingGoal && (
-                        <div className="bg-blue-50/50 rounded-[2.5rem] p-8 border border-blue-100 shadow-sm">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                                    <Clock className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">
-                                    {t('goals.nextDeadline')}
-                                </span>
-                            </div>
-                            <p className="font-black text-[#1D1D1F] text-lg mb-2">{stats.upcomingGoal.title}</p>
-                            <div className="flex items-center justify-between mt-4">
-                                <span className="text-sm font-bold text-gray-500">
-                                    {formatCurrency(stats.upcomingGoal.currentAmount || 0)} / {formatCurrency(stats.upcomingGoal.targetAmount || 0)}
-                                </span>
-                                <span className="text-[10px] font-black px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 uppercase tracking-widest">
-                                    {stats.upcomingGoal.deadline && differenceInDays(new Date(stats.upcomingGoal.deadline), new Date())} {t('dashboard.daysLeft')}
-                                </span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Professional Management Console - Quick Actions */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-gray-100 dark:border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.02)]">
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
-                                <h4 className="font-bold text-[#1D1D1F] dark:text-white tracking-tight">{t('dashboard.quickManagement')}</h4>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{t('dashboard.managementConsole')}</p>
-                            </div>
-                            <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
-                                <Zap className="h-4 w-4 text-gray-400" />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 gap-3">
-                            {[
-                                { icon: CreditCard, label: t('nav.accounts'), href: '/app/accounts', color: 'bg-blue-50 text-blue-600' },
-                                { icon: PieChart, label: t('nav.budgets'), href: '/app/budgets', color: 'bg-amber-50 text-amber-600' },
-                                { icon: Target, label: t('nav.goals'), href: '/app/goals', color: 'bg-violet-50 text-violet-600' },
-                                { icon: Settings, label: t('nav.settings'), href: '/app/settings', color: 'bg-gray-50 text-gray-600' },
-                            ].map((action, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => navigate(action.href)}
-                                    className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-50 hover:border-blue-100 hover:bg-blue-50/10 transition-all group"
-                                >
-                                    <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center shadow-inner", action.color)}>
-                                        <action.icon className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex-1 text-left">
-                                        <span className="text-sm font-bold text-[#1D1D1F] dark:text-gray-300 transition-colors group-hover:text-blue-600">{action.label}</span>
-                                        <p className="text-[10px] text-gray-400 font-medium">{t('dashboard.goToPanel')}</p>
-                                    </div>
-                                    <ChevronRight className="h-4 w-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            ))}
-                        </div>
-                    </div>
                 </motion.div>
             </div>
 
-            {/* Recent Transactions - Executive List Style */}
+            {/* Recent Transactions */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -718,7 +675,7 @@ export default function Dashboard() {
                 </div>
             </motion.div>
 
-            {/* Premium Features Section */}
+            {/* Premium Section */}
             {isPremium ? (
                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     <AIInsightsCard />
@@ -731,9 +688,7 @@ export default function Dashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 p-6 sm:p-8"
                 >
-                    {/* Background blur */}
                     <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-
                     <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="text-white">
                             <div className="flex items-center gap-2 mb-2">

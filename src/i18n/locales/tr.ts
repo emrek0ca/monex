@@ -246,6 +246,13 @@ export const tr = {
         wiqoInsightDefault: 'Finansal durumunuzu kontrol edin ve hedeflerinize bir adım daha yaklaşın.',
         wiqoInsightPro: 'Geçen aya göre abonelik harcamalarında %15 tasarruf edebilirsin. Detaylar analiz sayfasında.',
         wiqoInsightFree: 'Pro plana geçerek AI destekli harcama tahminlerine ulaşabilirsin.',
+        insights: {
+            highVelocity: 'Harcama hızın geçen aya göre %{{percent}} daha yüksek. Biraz yavaşlamak iyi olabilir.',
+            topCategory: 'Bu ay en çok {{category}} kategorisinde harcama yaptın.',
+            goodSaving: 'Harika gidiyorsun! Bu ay gelirinin %{{rate}}\'ini tasarruf ettin.',
+            noData: 'Daha fazla işlem ekledikçe sana özel içgörüler üretebilirim.',
+            overBudget: '{{category}} bütçeni aşmak üzeresin, dikkatli ol!',
+        },
         budgetUsage: 'Bütçe Kullanımı',
         budgetFullness: 'Doluluk',
         budgetStatusBalanced: 'Harcama Dengeli',
