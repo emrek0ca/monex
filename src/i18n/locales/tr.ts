@@ -374,7 +374,30 @@ gamification: {
         },
     },
 
-    // Settings
+    // Admin
+    admin: {
+        payments: 'Ödeme Yönetimi',
+        panel: 'Admin Paneli',
+        unauthorized: 'Yetkisiz Erişim',
+        unauthorizedDesc: 'Bu sayfayı görüntüleme yetkiniz yok.',
+        backToApp: 'Ana Sayfaya Dön',
+        pending: 'Beklemede',
+        approved: 'Onaylandı',
+        rejected: 'Reddedildi',
+        all: 'Tümü',
+        total: 'Toplam',
+        receipt: 'Dekont',
+        noPayments: 'Ödeme bulunamadı',
+        referenceCode: 'Referans Kodu',
+        plan: 'Plan',
+        monthly: 'Aylık',
+        yearly: 'Yıllık',
+        manualNote: 'Bu manuel ödeme Lemon Squeezy geçişi öncesindedir. Manuel onay desteği kaldırıldı.',
+        status: 'Durum',
+        amount: 'Tutar',
+        user: 'Kullanıcı',
+        date: 'Tarih',
+    },
     settings: {
         title: 'Ayarlar',
         subtitle: 'Hesabınızı ve uygulama tercihlerinizi yönetin',

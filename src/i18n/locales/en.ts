@@ -374,7 +374,30 @@ gamification: {
         },
     },
 
-    // Settings
+    // Admin
+    admin: {
+        payments: 'Payment Management',
+        panel: 'Admin Panel',
+        unauthorized: 'Unauthorized Access',
+        unauthorizedDesc: 'You do not have permission to view this page.',
+        backToApp: 'Back to App',
+        pending: 'Pending',
+        approved: 'Approved',
+        rejected: 'Rejected',
+        all: 'All',
+        total: 'Total',
+        receipt: 'Receipt',
+        noPayments: 'No payments found',
+        referenceCode: 'Reference Code',
+        plan: 'Plan',
+        monthly: 'Monthly',
+        yearly: 'Yearly',
+        manualNote: 'This manual payment is from before Lemon Squeezy migration. Manual approval support removed.',
+        status: 'Status',
+        amount: 'Amount',
+        user: 'User',
+        date: 'Date',
+    },
     settings: {
         title: 'Settings',
         subtitle: 'Manage your account and app preferences',
