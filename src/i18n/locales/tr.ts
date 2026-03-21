@@ -350,6 +350,7 @@ export const tr = {
     // Settings
     settings: {
         title: 'Ayarlar',
+        subtitle: 'Hesabınızı ve uygulama tercihlerinizi yönetin',
         subscription: 'Abonelik',
         fullAccess: 'Tüm premium özelliklere tam erişiminiz var',
         upgradeMore: 'Daha güçlü özellikler için yükseltin',
@@ -360,7 +361,8 @@ export const tr = {
         renews: 'Yenileme:',
         cancelSubscription: 'Aboneliği İptal Et',
         aiQueries: 'Bugünkü AI Sorguları',
-        queriesRemaining: 'sorgu kaldı. Gece yarısı sıfırlanır.',
+        queriesRemaining: '{{count}} sorgu kaldı. Gece yarısı sıfırlanır.',
+        queriesRemainingSimple: 'SORGU KALDI',
         profile: 'Profil Bilgileri',
         profileDesc: 'Özel hesap bilgileriniz.',
         name: 'İsim',
@@ -376,6 +378,11 @@ export const tr = {
         smartPredictions: 'Akıllı Tahminler',
         prioritySupport: 'Öncelikli Destek',
         advancedReports: 'Gelişmiş Raporlar',
+        adminPanel: 'Admin Paneli',
+        adminPanelDesc: 'Ödeme onayları ve kullanıcı yönetimi',
+        managePayments: 'Ödeme Yönetimi',
+        signOutDesc: 'HESAP OTURUMUNU KAPAT',
+        cancelConfirm: 'Aboneliğinizi iptal etmek istediğinize emin misiniz? Dönem sonuna kadar Pro özelliklerini kullanmaya devam edebilirsiniz.',
     },
 
     // Auth

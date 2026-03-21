@@ -6,17 +6,24 @@ import { logout, pb } from '@/api/client';
 import { useNavigate } from 'react-router-dom';
 import { Shield, User, LogOut, Crown, Sparkles, Zap, Check, CreditCard, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useSubscriptionStore, SUBSCRIPTION_PRICES } from '@/store/subscriptionStore';
 import { UpgradeModal } from '@/components/UI/UpgradeModal';
 import { LanguageSwitcher } from '@/components/UI/LanguageSwitcher';
+import { ConfirmDialog } from '@/components/UI/ConfirmDialog';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { tr, enUS } from 'date-fns/locale';
 
 export default function Settings() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const user = pb.authStore.model;
     const navigate = useNavigate();
-    const { isPremium, aiQueriesRemaining, maxFreeQueries, setPremium } = useSubscriptionStore();
+    const { isPremium, aiQueriesRemaining, maxFreeQueries, setPremium, subscriptionDetails } = useSubscriptionStore();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+    const dateLocale = i18n.language === 'tr' ? tr : enUS;
 
     const handleLogout = () => {
         logout();
@@ -26,11 +33,30 @@ export default function Settings() {
     const handleCancelSubscription = () => {
         // In a real app, this would call the payment API
         setPremium(false);
+        setShowCancelDialog(false);
+        toast.success(t('common.success') || 'İşlem başarılı');
+    };
+
+    const formatCurrency = (amount: number, currency: string = 'USD') => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: currency === '₺' ? 'TRY' : (currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
     };
 
     return (
         <div className="space-y-6 max-w-4xl mx-auto">
             <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+            
+            <ConfirmDialog
+                isOpen={showCancelDialog}
+                onClose={() => setShowCancelDialog(false)}
+                onConfirm={handleCancelSubscription}
+                title={t('settings.cancelSubscription')}
+                description={t('settings.cancelConfirm')}
+                variant="destructive"
+            />
 
             {/* Header - Apple Style */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
@@ -39,7 +65,7 @@ export default function Settings() {
                         {t('settings.title')}
                     </h1>
                     <p className="text-gray-500 font-medium mt-1">
-                        Hesabınızı ve uygulama tercihlerinizi yönetin
+                        {t('settings.subtitle')}
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -90,7 +116,10 @@ export default function Settings() {
                                             </div>
                                         </div>
                                         <div className="text-left sm:text-right">
-                                            <p className="text-3xl font-bold text-[#1D1D1F] tracking-tight">$6.67<span className="text-sm text-gray-400 font-medium">{t('upgrade.perMonth')}</span></p>
+                                            <p className="text-3xl font-bold text-[#1D1D1F] tracking-tight">
+                                                {formatCurrency(SUBSCRIPTION_PRICES.pro.yearly / 12, 'USD')}
+                                                <span className="text-sm text-gray-400 font-medium">{t('upgrade.perMonth')}</span>
+                                            </p>
                                             <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">{t('upgrade.billedAnnually')}</p>
                                         </div>
                                     </div>
@@ -116,12 +145,12 @@ export default function Settings() {
                                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                                     <Button variant="outline" className="flex-1 rounded-full h-12 border-gray-200 font-semibold" disabled>
                                         <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                        {t('settings.renews')} Dec 13, 2025
+                                        {t('settings.renews')} {subscriptionDetails?.expiresAt ? format(subscriptionDetails.expiresAt, 'PPP', { locale: dateLocale }) : '---'}
                                     </Button>
                                     <Button
                                         variant="ghost"
                                         className="rounded-full h-12 text-gray-400 hover:text-rose-500 font-semibold"
-                                        onClick={handleCancelSubscription}
+                                        onClick={() => setShowCancelDialog(true)}
                                     >
                                         {t('settings.cancelSubscription')}
                                     </Button>
@@ -136,7 +165,7 @@ export default function Settings() {
                                             <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight">{t('settings.freePlan')}</h3>
                                             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{t('settings.basicFeatures')}</p>
                                         </div>
-                                        <p className="text-3xl font-bold text-[#1D1D1F] tracking-tight">₺0<span className="text-sm text-gray-400 font-medium">{t('upgrade.perMonth')}</span></p>
+                                        <p className="text-3xl font-bold text-[#1D1D1F] tracking-tight">{formatCurrency(0)}<span className="text-sm text-gray-400 font-medium">{t('upgrade.perMonth')}</span></p>
                                     </div>
                                 </div>
 
@@ -145,7 +174,7 @@ export default function Settings() {
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
                                             <h4 className="text-sm font-bold text-[#1D1D1F] tracking-tight">{t('settings.aiQueries')}</h4>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{aiQueriesRemaining} SORGU KALDI</p>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{aiQueriesRemaining} {t('settings.queriesRemainingSimple')}</p>
                                         </div>
                                         <span className="text-lg font-black text-blue-500">%{(((maxFreeQueries - aiQueriesRemaining) / maxFreeQueries) * 100).toFixed(0)}</span>
                                     </div>
@@ -241,9 +270,9 @@ export default function Settings() {
                                     <Crown className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-[#1D1D1F] tracking-tight">Admin Paneli</h2>
+                                    <h2 className="text-xl font-bold text-[#1D1D1F] tracking-tight">{t('settings.adminPanel')}</h2>
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
-                                        Ödeme onayları ve kullanıcı yönetimi
+                                        {t('settings.adminPanelDesc')}
                                     </p>
                                 </div>
                             </div>
@@ -252,7 +281,7 @@ export default function Settings() {
                                 className="bg-[#1D1D1F] hover:bg-black text-white font-bold rounded-full h-12 px-8 shadow-xl shadow-black/10 w-full sm:w-auto"
                             >
                                 <CreditCard className="mr-2 h-4 w-4" />
-                                Ödeme Yönetimi
+                                {t('settings.managePayments')}
                             </Button>
                         </div>
                     </div>
@@ -263,7 +292,7 @@ export default function Settings() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div>
                             <h3 className="text-lg font-bold text-rose-600 tracking-tight">{t('settings.dangerZone')}</h3>
-                            <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1">HESAP OTURUMUNU KAPAT</p>
+                            <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1">{t('settings.signOutDesc')}</p>
                         </div>
                         <Button
                             onClick={handleLogout}

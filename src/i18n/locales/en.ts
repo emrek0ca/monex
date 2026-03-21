@@ -350,6 +350,7 @@ export const en = {
     // Settings
     settings: {
         title: 'Settings',
+        subtitle: 'Manage your account and app preferences',
         subscription: 'Subscription',
         fullAccess: 'You have full access to all premium features',
         upgradeMore: 'Upgrade for more powerful features',
@@ -357,10 +358,11 @@ export const en = {
         freePlan: 'Free Plan',
         unlimited: 'Unlimited AI • All Premium Features',
         basicFeatures: 'Basic features with limited AI',
-        renews: 'Renews',
+        renews: 'Renews:',
         cancelSubscription: 'Cancel Subscription',
         aiQueries: 'AI Queries Today',
-        queriesRemaining: 'queries remaining. Resets daily at midnight.',
+        queriesRemaining: '{{count}} queries remaining. Resets daily at midnight.',
+        queriesRemainingSimple: 'QUERIES REMAINING',
         profile: 'Profile Information',
         profileDesc: 'Your private account information.',
         name: 'Name',
@@ -376,6 +378,11 @@ export const en = {
         smartPredictions: 'Smart Predictions',
         prioritySupport: 'Priority Support',
         advancedReports: 'Advanced Reports',
+        adminPanel: 'Admin Panel',
+        adminPanelDesc: 'Payment confirmations and user management',
+        managePayments: 'Payment Management',
+        signOutDesc: 'SIGN OUT FROM ACCOUNT',
+        cancelConfirm: 'Are you sure you want to cancel your subscription? You can continue to use Pro features until the end of the period.',
     },
 
     // Auth
