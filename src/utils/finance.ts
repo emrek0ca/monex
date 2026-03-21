@@ -1,4 +1,5 @@
 import { MonexTransactionsResponse } from '@/types/pocketbase-types';
+import { CurrencyService, CurrencyCode } from '@/services/currencyService';
 
 export const FinanceUtils = {
     sum: (arr: number[]) => arr.reduce((a, b) => a + b, 0),
@@ -6,15 +7,45 @@ export const FinanceUtils = {
     avg: (arr: number[]) => (arr.length === 0 ? 0 : FinanceUtils.sum(arr) / arr.length),
 
     /**
-     * Calculates total income, expense, and savings rate from transactions
+     * Parses the amount and currency from a transaction
      */
-    calculateCashFlow: (transactions: MonexTransactionsResponse[]) => {
+    parseTransactionAmount: (tx: MonexTransactionsResponse, targetCurrency: string = 'USD') => {
+        const amount = tx.amount || 0;
+        let fromCurrency: CurrencyCode = 'USD';
+
+        // Check for currency tag in note like [TRY], [EUR]
+        const match = tx.note?.match(/\[([A-Z]{3})\]/);
+        if (match && match[1]) {
+            fromCurrency = match[1] as CurrencyCode;
+        } else {
+            // Fallback to a default if no tag, ideally user's currency
+            // For now we assume USD if no tag exists
+            fromCurrency = 'USD';
+        }
+
+        const targetCode = CurrencyService.getCodeFromSymbol(targetCurrency);
+        const convertedAmount = CurrencyService.convert(amount, fromCurrency, targetCode);
+
+        return {
+            originalAmount: amount,
+            originalCurrency: fromCurrency,
+            convertedAmount,
+            targetCurrency: targetCode,
+            cleanNote: tx.note?.replace(/\[[A-Z]{3}\]\s?/, '') || ''
+        };
+    },
+
+    /**
+     * Calculates total income, expense, and savings rate from transactions with multi-currency support
+     */
+    calculateCashFlow: (transactions: MonexTransactionsResponse[], targetCurrency: string = '$') => {
         let income = 0;
         let expense = 0;
 
-        transactions.forEach(t => {
-            if (t.type === 'income') income += (t.amount || 0);
-            if (t.type === 'expense') expense += (t.amount || 0);
+        transactions.forEach(tx => {
+            const { convertedAmount } = FinanceUtils.parseTransactionAmount(tx, targetCurrency);
+            if (tx.type === 'income') income += convertedAmount;
+            if (tx.type === 'expense') expense += convertedAmount;
         });
 
         const net = income - expense;
@@ -24,19 +55,20 @@ export const FinanceUtils = {
     },
 
     /**
-     * Groups transactions by month for trend analysis
+     * Groups transactions by month for trend analysis with multi-currency support
      */
-    getMonthlyData: (transactions: MonexTransactionsResponse[]) => {
+    getMonthlyData: (transactions: MonexTransactionsResponse[], targetCurrency: string = '$') => {
         const months: Record<string, { income: number; expense: number }> = {};
 
-        transactions.forEach(t => {
-            if (!t.date) return;
-            const date = t.date.substring(0, 7); // YYYY-MM
+        transactions.forEach(tx => {
+            if (!tx.date) return;
+            const date = tx.date.substring(0, 7); // YYYY-MM
 
             if (!months[date]) months[date] = { income: 0, expense: 0 };
 
-            if (t.type === 'income') months[date].income += (t.amount || 0);
-            if (t.type === 'expense') months[date].expense += (t.amount || 0);
+            const { convertedAmount } = FinanceUtils.parseTransactionAmount(tx, targetCurrency);
+            if (tx.type === 'income') months[date].income += convertedAmount;
+            if (tx.type === 'expense') months[date].expense += convertedAmount;
         });
 
         return Object.entries(months)
@@ -45,13 +77,12 @@ export const FinanceUtils = {
     },
 
     /**
-     * Estimates runway (months until bankruptcy) based on current balance and average monthly burn
+     * Estimates runway based on multi-currency normalized data
      */
-    calculateRunway: (currentBalance: number, transactions: MonexTransactionsResponse[]) => {
-        const monthlyData = FinanceUtils.getMonthlyData(transactions);
+    calculateRunway: (currentBalance: number, transactions: MonexTransactionsResponse[], targetCurrency: string = '$') => {
+        const monthlyData = FinanceUtils.getMonthlyData(transactions, targetCurrency);
         if (monthlyData.length === 0) return Infinity;
 
-        // Calculate average monthly expense (Burn Rate)
         const totalExpense = monthlyData.reduce((acc, m) => acc + m.expense, 0);
         const burnRate = totalExpense / monthlyData.length;
 
@@ -61,10 +92,10 @@ export const FinanceUtils = {
     },
 
     /**
-     * Projects future net worth based on current growth
+     * Projects future net worth based on multi-currency normalized data
      */
-    projectNetWorth: (currentBalance: number, transactions: MonexTransactionsResponse[], monthsToProject: number = 12) => {
-        const monthlyData = FinanceUtils.getMonthlyData(transactions);
+    projectNetWorth: (currentBalance: number, transactions: MonexTransactionsResponse[], monthsToProject: number = 12, targetCurrency: string = '$') => {
+        const monthlyData = FinanceUtils.getMonthlyData(transactions, targetCurrency);
         if (monthlyData.length === 0) return Array(monthsToProject).fill(currentBalance);
 
         const totalNet = monthlyData.reduce((acc, m) => acc + (m.income - m.expense), 0);

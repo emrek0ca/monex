@@ -539,6 +539,16 @@ gamification: {
         noResults: 'Sonuç bulunamadı.',
     },
 
+    // Currency
+    currency: {
+        baseCurrency: 'Ana Para Birimi',
+        convertFrom: 'Şu birimden çevir:',
+        rateUsed: 'Kullanılan Kur',
+        lastUpdated: 'Son Güncelleme',
+        convertSuccess: 'Kur başarıyla güncellendi',
+        convertError: 'Kur bilgisi alınamadı',
+    },
+
     // Budgets
     budgets: {
         title: 'Bütçeler',

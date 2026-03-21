@@ -4,10 +4,11 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { pb } from '@/api/client';
 import { Collections, MonexAccountsResponse, MonexTransactionsResponse } from '@/types/pocketbase-types';
 import { LiquidModal, LiquidInput, LiquidSelect, LiquidTextarea } from '@/components/UI/LiquidModal';
-import { TrendingUp, TrendingDown, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowLeftRight, Loader2, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { CurrencyService, CurrencyCode } from '@/services/currencyService';
 
 interface AddTransactionModalProps {
     isOpen: boolean;
@@ -31,6 +32,7 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
 
     const [type, setType] = useState<TransactionType>('expense');
     const [amount, setAmount] = useState('');
+    const [currency, setCurrency] = useState<CurrencyCode>('USD');
     const [category, setCategory] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [note, setNote] = useState('');
@@ -43,8 +45,17 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
             setAmount(editData.amount?.toString() || '');
             setCategory(editData.category || '');
             setDate(editData.date ? format(new Date(editData.date), 'yyyy-MM-dd') : new Date().toISOString().split('T')[0]);
-            setNote(editData.note || '');
             setAccountId(editData.account || '');
+            
+            // Extract currency and note
+            const match = editData.note?.match(/\[([A-Z]{3})\]/);
+            if (match) {
+                setCurrency(match[1] as CurrencyCode);
+                setNote(editData.note?.replace(/\[[A-Z]{3}\]\s?/, '') || '');
+            } else {
+                setNote(editData.note || '');
+                setCurrency('USD');
+            }
         }
     }, [editData]);
 
@@ -61,13 +72,14 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
 
     const createMutation = useMutation({
         mutationFn: async () => {
+            const finalNote = `[${currency}] ${note}`.trim();
             return pb.collection(Collections.MonexTransactions).create({
                 user: user?.id,
                 type,
                 amount: parseFloat(amount),
                 category: category || categories[type][0],
                 date,
-                note,
+                note: finalNote,
                 account: accountId || accounts?.[0]?.id,
             });
         },
@@ -83,12 +95,13 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
 
     const updateMutation = useMutation({
         mutationFn: async () => {
+            const finalNote = `[${currency}] ${note}`.trim();
             return pb.collection(Collections.MonexTransactions).update(editData!.id, {
                 type,
                 amount: parseFloat(amount),
                 category: category || categories[type][0],
                 date,
-                note,
+                note: finalNote,
                 account: accountId || accounts?.[0]?.id,
             });
         },
@@ -113,6 +126,7 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
     const handleClose = () => {
         setType('expense');
         setAmount('');
+        setCurrency('USD');
         setCategory('');
         setDate(new Date().toISOString().split('T')[0]);
         setNote('');
@@ -135,15 +149,8 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
 
     const isPending = createMutation.isPending || updateMutation.isPending;
 
-    const getTypeLabel = (txType: TransactionType) => {
-        switch (txType) {
-            case 'income': return t('transactions.income');
-            case 'expense': return t('transactions.expense');
-            case 'transfer': return t('transactions.transfer');
-        }
-    };
-
     const transactionTypes: TransactionType[] = ['expense', 'income', 'transfer'];
+    const currencies: CurrencyCode[] = ['USD', 'TRY', 'EUR', 'GBP'];
 
     return (
         <LiquidModal
@@ -177,24 +184,37 @@ export function AddTransactionModal({ isOpen, onClose, editData }: AddTransactio
                             {txType === 'income' && <TrendingUp className="h-5 w-5" />}
                             {txType === 'expense' && <TrendingDown className="h-5 w-5" />}
                             {txType === 'transfer' && <ArrowLeftRight className="h-5 w-5" />}
-                            <span className="text-xs font-medium">{getTypeLabel(txType)}</span>
+                            <span className="text-xs font-medium">{t(`transactions.${txType}`)}</span>
                         </button>
                     ))}
                 </div>
 
-                {/* Amount */}
-                <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
-                    <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        className="w-full liquid-input pl-10 text-2xl font-bold"
-                        required
-                    />
+                {/* Amount & Currency */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">
+                            {CurrencyService.getSymbol(currency)}
+                        </span>
+                        <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                            className="w-full liquid-input pl-10 text-2xl font-bold"
+                            required
+                        />
+                    </div>
+                    <select
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                        className="w-24 liquid-input font-bold text-center"
+                    >
+                        {currencies.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Category */}

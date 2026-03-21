@@ -539,6 +539,16 @@ gamification: {
         noResults: 'No results found.',
     },
 
+    // Currency
+    currency: {
+        baseCurrency: 'Base Currency',
+        convertFrom: 'Convert from:',
+        rateUsed: 'Exchange Rate',
+        lastUpdated: 'Last Updated',
+        convertSuccess: 'Exchange rates updated',
+        convertError: 'Failed to fetch rates',
+    },
+
     // Budgets
     budgets: {
         title: 'Budgets',
