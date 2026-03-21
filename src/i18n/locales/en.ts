@@ -521,6 +521,24 @@ gamification: {
         customRange: 'Custom Range',
     },
 
+    // Command Palette
+    command: {
+        placeholder: 'Type a command or search...',
+        actions: 'Actions',
+        navigation: 'Navigation',
+        addTransaction: 'Add Transaction',
+        addAccount: 'Add Account',
+        addGoal: 'Set Goal',
+        addBudget: 'Create Budget',
+        goToDashboard: 'Go to Dashboard',
+        goToTransactions: 'Go to Transactions',
+        goToAnalytics: 'Go to Analytics',
+        goToGoals: 'Go to Goals',
+        goToBudgets: 'Go to Budgets',
+        goToSettings: 'Go to Settings',
+        noResults: 'No results found.',
+    },
+
     // Budgets
     budgets: {
         title: 'Budgets',

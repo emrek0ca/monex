@@ -521,6 +521,24 @@ gamification: {
         customRange: 'Özel Aralık',
     },
 
+    // Command Palette
+    command: {
+        placeholder: 'Bir komut yazın veya arama yapın...',
+        actions: 'Aksiyonlar',
+        navigation: 'Gezinti',
+        addTransaction: 'İşlem Ekle',
+        addAccount: 'Hesap Ekle',
+        addGoal: 'Hedef Belirle',
+        addBudget: 'Bütçe Oluştur',
+        goToDashboard: 'Dashboard\'a Git',
+        goToTransactions: 'İşlemlere Git',
+        goToAnalytics: 'Analizlere Git',
+        goToGoals: 'Hedeflere Git',
+        goToBudgets: 'Bütçelere Git',
+        goToSettings: 'Ayarlara Git',
+        noResults: 'Sonuç bulunamadı.',
+    },
+
     // Budgets
     budgets: {
         title: 'Bütçeler',
