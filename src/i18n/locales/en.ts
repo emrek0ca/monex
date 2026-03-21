@@ -400,6 +400,10 @@ export const en = {
         notePlaceholder: 'Add a note (optional)',
         addSuccess: 'Transaction added successfully',
         addError: 'Failed to add transaction',
+        loading: 'Loading transactions...',
+        totalTransactions: 'Total Transactions',
+        thisMonth: 'This Month',
+        netStatus: 'Net Status',
     },
 
     // Budgets

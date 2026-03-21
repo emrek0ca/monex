@@ -400,6 +400,10 @@ export const tr = {
         notePlaceholder: 'Not ekleyin (isteğe bağlı)',
         addSuccess: 'İşlem başarıyla eklendi',
         addError: 'İşlem eklenemedi',
+        loading: 'İşlemler yükleniyor...',
+        totalTransactions: 'Toplam İşlem',
+        thisMonth: 'Bu Ay',
+        netStatus: 'Net Durum',
     },
 
     // Budgets

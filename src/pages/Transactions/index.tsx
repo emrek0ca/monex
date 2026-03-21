@@ -5,6 +5,7 @@ import { TransactionList } from '@/components/Transactions/TransactionList';
 import { AddTransactionModal } from '@/components/Modals';
 import { Button } from '@/components/UI/Button';
 import { pb } from '@/api/client';
+import { useUserStore } from '@/store/userStore';
 import { Collections, MonexTransactionsResponse } from '@/types/pocketbase-types';
 import {
     Plus,
@@ -18,22 +19,27 @@ import {
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { tr, enUS } from 'date-fns/locale';
 
 export default function Transactions() {
-    const { t } = useTranslation();
-    const user = pb.authStore.model;
+    const { t, i18n } = useTranslation();
+    const { user } = useUserStore();
     const [showAddModal, setShowAddModal] = useState(false);
     const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+
+    const dateLocale = i18n.language === 'tr' ? tr : enUS;
+    const currencySymbol = user?.currency || '$';
 
     const { data: transactions, isLoading } = useQuery({
         queryKey: ['transactions', 'all', user?.id],
         queryFn: async () => {
+            if (!user?.id) return [];
             return pb.collection(Collections.MonexTransactions).getFullList<MonexTransactionsResponse>({
                 sort: '-date',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user.id })
             });
         },
-        enabled: !!user
+        enabled: !!user?.id
     });
 
     const stats = useMemo(() => {
@@ -65,14 +71,22 @@ export default function Transactions() {
 
     if (isLoading) {
         return (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">Loading transactions...</p>
+                    <p className="text-sm text-gray-500">{t('transactions.loading')}</p>
                 </div>
             </div>
         );
     }
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
+    };
 
     return (
         <div className="space-y-6">
@@ -109,14 +123,14 @@ export default function Transactions() {
                 >
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Toplam İşlem</span>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('transactions.totalTransactions')}</span>
                             <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center">
                                 <ArrowRightLeft className="h-5 w-5 text-blue-600" />
                             </div>
                         </div>
                         <p className="text-3xl font-bold text-[#1D1D1F] tracking-tight">{stats.totalTransactions}</p>
                         <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded-full bg-gray-50 border border-gray-100 text-[10px] font-bold text-gray-500">
-                            {stats.thisMonthCount} Bu Ay
+                            {stats.thisMonthCount} {t('transactions.thisMonth')}
                         </div>
                     </div>
                 </motion.div>
@@ -135,9 +149,9 @@ export default function Transactions() {
                             </div>
                         </div>
                         <p className="text-3xl font-bold text-emerald-600 tracking-tight">
-                            +${stats.income.toLocaleString()}
+                            +{formatCurrency(stats.income)}
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">{format(new Date(), 'MMMM')}</p>
+                        <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">{format(new Date(), 'MMMM', { locale: dateLocale })}</p>
                     </div>
                 </motion.div>
 
@@ -155,9 +169,9 @@ export default function Transactions() {
                             </div>
                         </div>
                         <p className="text-3xl font-bold text-rose-600 tracking-tight">
-                            -${stats.expense.toLocaleString()}
+                            -{formatCurrency(stats.expense)}
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">{format(new Date(), 'MMMM')}</p>
+                        <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">{format(new Date(), 'MMMM', { locale: dateLocale })}</p>
                     </div>
                 </motion.div>
 
@@ -169,7 +183,7 @@ export default function Transactions() {
                 >
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Net Durum</span>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('transactions.netStatus')}</span>
                             <div className={cn(
                                 "h-10 w-10 rounded-xl flex items-center justify-center",
                                 stats.net >= 0 ? "bg-emerald-50" : "bg-rose-50"
@@ -185,9 +199,9 @@ export default function Transactions() {
                             "text-3xl font-bold tracking-tight",
                             stats.net >= 0 ? "text-emerald-600" : "text-rose-600"
                         )}>
-                            {stats.net >= 0 ? '+' : ''}${stats.net.toLocaleString()}
+                            {stats.net >= 0 ? '+' : ''}{formatCurrency(stats.net)}
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">Bu Ay</p>
+                        <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">{t('transactions.thisMonth')}</p>
                     </div>
                 </motion.div>
             </div>
@@ -210,7 +224,7 @@ export default function Transactions() {
                                 : "text-gray-500 hover:text-[#1D1D1F]"
                         )}
                     >
-                        {type === 'all' && 'Tümü'}
+                        {type === 'all' && t('transactions.all')}
                         {type === 'income' && t('dashboard.in')}
                         {type === 'expense' && t('dashboard.out')}
                         <span className="ml-2 opacity-50 font-medium">
