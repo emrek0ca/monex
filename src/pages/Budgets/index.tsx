@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useUserStore } from '@/store/userStore';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -30,9 +31,9 @@ import {
 } from '@/components/UI/DropdownMenu';
 
 export default function Budgets() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const queryClient = useQueryClient();
-    const user = pb.authStore.model;
+    const { user } = useUserStore();
     const [showAddModal, setShowAddModal] = useState(false);
     const [editBudget, setEditBudget] = useState<MonexBudgetsResponse | null>(null);
     const [deleteBudget, setDeleteBudget] = useState<MonexBudgetsResponse | null>(null);
@@ -42,10 +43,10 @@ export default function Budgets() {
         queryFn: async () => {
             return pb.collection(Collections.MonexBudgets).getFullList<MonexBudgetsResponse>({
                 sort: '-created',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user?.id })
             });
         },
-        enabled: !!user
+        enabled: !!user?.id
     });
 
     const deleteMutation = useMutation({
@@ -54,13 +55,21 @@ export default function Budgets() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['budgets'] });
-            toast.success(t('budgets.deleteSuccess') || 'Budget deleted successfully');
+            toast.success(t('budgets.deleteSuccess'));
             setDeleteBudget(null);
         },
         onError: () => {
-            toast.error(t('budgets.deleteError') || 'Failed to delete budget');
+            toast.error(t('budgets.deleteError'));
         }
     });
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
+    };
 
     const totalBudget = budgets?.reduce((acc, curr) => acc + (curr.limit_amount || 0), 0) || 0;
     const totalSpent = budgets?.reduce((acc, curr) => acc + (curr.current_amount || 0), 0) || 0;
@@ -70,10 +79,10 @@ export default function Budgets() {
 
     if (isLoading) {
         return (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">Loading budgets...</p>
+                    <p className="text-sm text-gray-500">{t('common.loading')}</p>
                 </div>
             </div>
         );
@@ -94,15 +103,15 @@ export default function Budgets() {
                 isOpen={!!deleteBudget}
                 onClose={() => setDeleteBudget(null)}
                 onConfirm={() => deleteBudget && deleteMutation.mutate(deleteBudget.id)}
-                title={t('budgets.deleteTitle') || 'Delete Budget'}
-                description={t('budgets.deleteDescription') || `Are you sure you want to delete the "${deleteBudget?.category}" budget? This action cannot be undone.`}
+                title={t('budgets.deleteTitle')}
+                description={t('budgets.deleteDescription', { category: deleteBudget?.category })}
                 confirmLabel={t('common.delete')}
                 cancelLabel={t('common.cancel')}
-                variant="danger"
+                variant="destructive"
                 isLoading={deleteMutation.isPending}
             />
 
-            {/* Header - Apple Style */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
                 <div>
                     <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1D1D1F]">
@@ -121,10 +130,9 @@ export default function Budgets() {
                 </Button>
             </div>
 
-            {/* Stats Grid - Light High Contrast */}
+            {/* Stats Grid */}
             {budgets && budgets.length > 0 && (
                 <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                    {/* Total Budget Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -138,13 +146,13 @@ export default function Budgets() {
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-[10px] mb-3">
                                         <PieChart className="h-4 w-4 text-orange-500" />
-                                        <span>{t('budgets.totalSpent') || 'TOPLAM HARCAMA'}</span>
+                                        <span>{t('budgets.totalSpent')}</span>
                                     </div>
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-4xl sm:text-5xl font-bold text-[#1D1D1F] tracking-tight truncate">
-                                            ${totalSpent.toLocaleString()}
+                                            {formatCurrency(totalSpent)}
                                         </h2>
-                                        <span className="text-gray-400 font-medium px-2">/ ${totalBudget.toLocaleString()}</span>
+                                        <span className="text-gray-400 font-medium px-2">/ {formatCurrency(totalBudget)}</span>
                                     </div>
                                     <div className="mt-6">
                                         <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
@@ -159,7 +167,7 @@ export default function Budgets() {
                                             />
                                         </div>
                                         <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">
-                                            BÜTÇENİN %{totalPercentage.toFixed(0)} KULLANILDI
+                                            {t('budgets.budgetUsage', { percent: totalPercentage.toFixed(0) })}
                                         </p>
                                     </div>
                                 </div>
@@ -174,45 +182,35 @@ export default function Budgets() {
                         </div>
                     </motion.div>
 
-                    {/* On Track */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                    >
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] h-full">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Takipte</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('budgets.onTrack')}</span>
                                 <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                                     <Check className="h-5 w-5 text-emerald-600" />
                                 </div>
                             </div>
                             <p className="text-3xl font-bold text-emerald-600 tracking-tight">{onTrackCount}</p>
-                            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-widest">Bütçen Kontrolde</p>
+                            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-widest">{t('budgets.onTrackDesc')}</p>
                         </div>
                     </motion.div>
 
-                    {/* Over Budget */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                         <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] h-full">
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Aşım</span>
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('budgets.overBudgetCount')}</span>
                                 <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center">
                                     <AlertTriangle className="h-5 w-5 text-rose-600" />
                                 </div>
                             </div>
                             <p className="text-3xl font-bold text-rose-600 tracking-tight">{overBudgetCount}</p>
-                            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-widest">Sınırı Geçenler</p>
+                            <p className="text-xs text-gray-400 font-medium mt-1 uppercase tracking-widest">{t('budgets.overBudgetDesc')}</p>
                         </div>
                     </motion.div>
                 </div>
             )}
 
-            {/* Budget Cards - Apple Style */}
+            {/* Budget Cards */}
             {budgets && budgets.length > 0 ? (
                 <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {budgets.map((budget, index) => {
@@ -239,7 +237,7 @@ export default function Budgets() {
                                 <div className="flex items-start justify-between mb-6">
                                     <div className="flex-1 min-w-0">
                                         <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight truncate mb-1">{budget.category}</h3>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">AYLIK BÜTÇE</p>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('budgets.monthlyBudget')}</p>
                                     </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -264,15 +262,14 @@ export default function Budgets() {
                                     </DropdownMenu>
                                 </div>
 
-                                {/* Progress Section */}
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-end">
                                         <div>
                                             <p className="text-2xl font-bold text-[#1D1D1F] tracking-tight">
-                                                ${(budget.current_amount || 0).toLocaleString()}
+                                                {formatCurrency(budget.current_amount || 0)}
                                             </p>
                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                                / ${(budget.limit_amount || 0).toLocaleString()} limit
+                                                / {formatCurrency(budget.limit_amount || 0)} {t('budgets.limit')}
                                             </p>
                                         </div>
                                         <div className={cn(
@@ -283,7 +280,6 @@ export default function Budgets() {
                                         </div>
                                     </div>
 
-                                    {/* Progress Bar */}
                                     <div className="h-3 bg-gray-50 rounded-full overflow-hidden shadow-inner">
                                         <motion.div
                                             initial={{ width: 0 }}
@@ -294,7 +290,6 @@ export default function Budgets() {
                                     </div>
                                 </div>
 
-                                {/* Footer */}
                                 <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-between">
                                     <div className={cn(
                                         "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
@@ -303,12 +298,12 @@ export default function Budgets() {
                                         {isOver ? (
                                             <>
                                                 <AlertTriangle className="h-3 w-3" />
-                                                ${Math.abs(remaining).toLocaleString()} AŞIM
+                                                {formatCurrency(Math.abs(remaining))} {t('budgets.overBudgetCapital')}
                                             </>
                                         ) : (
                                             <>
                                                 <Check className="h-3 w-3" />
-                                                ${remaining.toLocaleString()} KALDI
+                                                {formatCurrency(remaining)} {t('budgets.remainingCapital')}
                                             </>
                                         )}
                                     </div>
@@ -331,9 +326,9 @@ export default function Budgets() {
                     <div className="h-20 w-20 rounded-[2rem] bg-[#FBFBFD] flex items-center justify-center mx-auto mb-6 shadow-inner">
                         <PieChart className="h-10 w-10 text-gray-300" />
                     </div>
-                    <h3 className="text-xl font-bold text-[#1D1D1F] mb-2 font-display tracking-tight">Henüz bütçe yok</h3>
+                    <h3 className="text-xl font-bold text-[#1D1D1F] mb-2 font-display tracking-tight">{t('budgets.noBudgetsTitle')}</h3>
                     <p className="text-gray-500 font-medium mb-8 max-w-xs mx-auto">
-                        {t('budgets.noBudgets') || "Harcamalarını kontrol altında tutmak için ilk bütçeni oluştur."}
+                        {t('budgets.noBudgets')}
                     </p>
                     <Button
                         onClick={() => setShowAddModal(true)}
