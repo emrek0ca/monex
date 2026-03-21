@@ -258,9 +258,26 @@ export const tr = {
         thinking: 'Wiqo düşünüyor...',
         queriesLeft: 'sorgu kaldı bugün',
         dailyLimitReached: 'Günlük limit doldu',
+        limitReachedDesc: 'Günlük veya aylık AI kullanım limitinize ulaştınız. Daha fazla sorgu için paketinizi yükseltebilir veya yeni sorgu paketi alabilirsiniz.',
         dailyLimitDesc: 'Sınırsız AI sorgusu ve premium içgörüler için Pro\'ya yükseltin.',
         upgradeNow: 'Şimdi Yükselt',
         error: 'Üzgünüm, şu anda bağlanmakta sorun yaşıyorum.',
+        noAnswer: 'Cevap oluşturamadım.',
+    },
+
+    // Subscription
+    subscription: {
+        free: 'Ücretsiz Plan',
+        pro: 'Pro Plan',
+        proPlus: 'Pro+ Plan',
+        expired: 'Abonelik süresi doldu',
+        daysRemaining: '{{days}} gün kaldı',
+        statusText: {
+            pro: 'Pro • {{days}} gün kaldı',
+            proPlus: 'Pro+ • {{days}} gün kaldı',
+            expired: 'Abonelik süresi doldu',
+            free: 'Ücretsiz Plan',
+        }
     },
 
     // Upgrade Modal

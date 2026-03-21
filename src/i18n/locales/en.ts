@@ -258,9 +258,26 @@ export const en = {
         thinking: 'Wiqo is thinking...',
         queriesLeft: 'queries left today',
         dailyLimitReached: 'Daily limit reached',
+        limitReachedDesc: 'You have reached your daily or monthly AI query limit. Upgrade your plan or purchase a query pack to continue.',
         dailyLimitDesc: 'Upgrade to Pro for unlimited AI queries and premium insights.',
         upgradeNow: 'Upgrade Now',
         error: 'Sorry, I\'m having trouble connecting right now.',
+        noAnswer: "I couldn't generate an answer.",
+    },
+
+    // Subscription
+    subscription: {
+        free: 'Free Plan',
+        pro: 'Pro Plan',
+        proPlus: 'Pro+ Plan',
+        expired: 'Subscription expired',
+        daysRemaining: '{{days}} days left',
+        statusText: {
+            pro: 'Pro • {{days}} days left',
+            proPlus: 'Pro+ • {{days}} days left',
+            expired: 'Subscription expired',
+            free: 'Free Plan',
+        }
     },
 
     // Upgrade Modal

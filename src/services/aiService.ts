@@ -1,6 +1,7 @@
 import { pb } from '@/api/client';
-import { MonexTransactionsResponse } from '@/types/pocketbase-types';
+import { MonexTransactionsResponse, MonexAccountsResponse } from '@/types/pocketbase-types';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import i18n from '@/i18n';
 
 export type ChatMessage = {
     role: 'system' | 'user' | 'assistant';
@@ -26,13 +27,13 @@ export class AIService {
     static async generateInsight(userContext: any, query: string): Promise<string> {
         if (!GROQ_API_KEY) {
             console.warn("VITE_GROQ_API_KEY is not set.");
-            return "I'm sorry, my AI brain is not connected right now. Please check the configuration.";
+            return i18n.t('ai.error');
         }
 
         // 0. Check subscription limits
         const subStore = useSubscriptionStore.getState();
         if (subStore.aiQueriesRemaining <= 0 && subStore.plan !== 'pro_plus') {
-            return "Günlük veya aylık AI kullanım limitinize ulaştınız. Daha fazla sorgu için paketinizi yükseltebilir veya yeni sorgu paketi alabilirsiniz.";
+            return i18n.t('ai.limitReachedDesc');
         }
 
         try {
@@ -67,7 +68,7 @@ export class AIService {
                 throw new Error(data.error.message || "AI Service Error");
             }
 
-            const answer = data.choices?.[0]?.message?.content || "I couldn't generate an answer.";
+            const answer = data.choices?.[0]?.message?.content || i18n.t('ai.noAnswer');
 
             // 3. Decrement query count on success
             subStore.decrementQueries();
@@ -76,7 +77,7 @@ export class AIService {
 
         } catch (error) {
             console.error("AI Service Error:", error);
-            return "I encountered an error processing your request. Please try again later.";
+            return i18n.t('ai.error');
         }
     }
 
@@ -95,7 +96,7 @@ export class AIService {
             filter: pb.filter('user = {:userId}', { userId })
         });
 
-        const accounts = await pb.collection('monex_accounts').getFullList({
+        const accounts = await pb.collection('monex_accounts').getFullList<MonexAccountsResponse>({
             filter: pb.filter('user = {:userId}', { userId })
         });
 
@@ -115,7 +116,7 @@ export class AIService {
                 type: t.type,
                 note: t.note
             })),
-            accounts: accounts.map((a: any) => ({
+            accounts: accounts.map((a: MonexAccountsResponse) => ({
                 name: a.name,
                 balance: a.balance,
                 type: a.type
