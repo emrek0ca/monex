@@ -257,6 +257,11 @@ export const en = {
         budgetFullness: 'Usage',
         budgetStatusBalanced: 'Spending Balanced',
         budgetStatusOver: 'Over Budget',
+        recurringSubscriptions: 'Your Subscriptions',
+        monthlySubscriptionsTotal: 'Monthly Total',
+        nextPayment: 'Next Payment',
+        noSubscriptionsFound: 'No subscriptions detected yet.',
+        subscriptionInsight: 'Your subscription spending is stable compared to last month.',
     },
 // Gamification
 gamification: {

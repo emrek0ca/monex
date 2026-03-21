@@ -257,6 +257,11 @@ export const tr = {
         budgetFullness: 'Doluluk',
         budgetStatusBalanced: 'Harcama Dengeli',
         budgetStatusOver: 'Bütçe Aşımı',
+        recurringSubscriptions: 'Aboneliklerin',
+        monthlySubscriptionsTotal: 'Aylık Toplam',
+        nextPayment: 'Gelecek Ödeme',
+        noSubscriptionsFound: 'Henüz abonelik tespit edilemedi.',
+        subscriptionInsight: 'Abonelik harcamaların geçen aya göre sabit.',
     },
 // Gamification
 gamification: {

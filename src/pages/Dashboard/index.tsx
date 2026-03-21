@@ -24,12 +24,14 @@ import {
     Settings,
     AlertCircle,
     CheckCircle2,
-    Info
+    Info,
+    Tv,
+    CalendarDays
 } from 'lucide-react';
 import { Button } from '@/components/UI/Button';
 import { pb } from '@/api/client';
 import { cn } from '@/lib/utils';
-import { format, subMonths, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, differenceInDays, addMonths } from 'date-fns';
 import { tr, enUS } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { MonexTransactionsResponse, MonexAccountsResponse, MonexGoalsResponse, MonexBudgetsResponse, Collections } from '@/types/pocketbase-types';
@@ -145,6 +147,15 @@ export default function Dashboard() {
 
         const recentTx = transactions.slice(0, 5);
 
+        // Detect potential subscriptions (Netflix, Spotify, etc.)
+        const subscriptionKeywords = ['netflix', 'spotify', 'youtube', 'premium', 'abonelik', 'subscription', 'icloud', 'disney', 'prime', 'gym', 'sport'];
+        const detectedSubscriptions = allTransactions.filter(tx => 
+            tx.type === 'expense' && 
+            subscriptionKeywords.some(keyword => tx.note?.toLowerCase().includes(keyword) || tx.category?.toLowerCase().includes(keyword))
+        ).slice(0, 3); // Get top 3 latest unique potential subs
+
+        const monthlySubsTotal = detectedSubscriptions.reduce((sum, s) => sum + (s.amount || 0), 0);
+
         // Calculate proactive insight
         let proactiveInsight = {
             text: t('dashboard.wiqoInsightDefault'),
@@ -166,7 +177,6 @@ export default function Dashboard() {
                     icon: CheckCircle2
                 };
             } else {
-                // Find top category
                 const categories: Record<string, number> = {};
                 currentMonthTx.forEach(tx => {
                     if (tx.type === 'expense' && tx.category) {
@@ -200,9 +210,11 @@ export default function Dashboard() {
             goalCount: goals.length,
             budgetCount: budgets.length,
             isHistoryRestricted: !isPremium && allTransactions.length > transactions.length,
-            proactiveInsight
+            proactiveInsight,
+            detectedSubscriptions,
+            monthlySubsTotal
         };
-    }, [transactions, allTransactions.length, accounts, goals, budgets, isPremium, t]);
+    }, [transactions, allTransactions, accounts, goals, budgets, isPremium, t]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
@@ -528,7 +540,7 @@ export default function Dashboard() {
                         />
                     )}
 
-                    {/* Proactive AI Insight - Refined */}
+                    {/* Proactive AI Insight */}
                     <motion.div
                         whileHover={{ scale: 1.02 }}
                         className={cn(
@@ -546,6 +558,50 @@ export default function Dashboard() {
                             "{stats.proactiveInsight.text}"
                         </p>
                     </motion.div>
+
+                    {/* Subscriptions Widget - Visionary Feature */}
+                    <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                                    <Tv className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <span className="font-bold text-[#1D1D1F]">{t('dashboard.recurringSubscriptions')}</span>
+                            </div>
+                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-full uppercase">
+                                {stats.detectedSubscriptions.length}
+                            </span>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {stats.detectedSubscriptions.length > 0 ? (
+                                <>
+                                    {stats.detectedSubscriptions.map((sub, i) => (
+                                        <div key={i} className="flex items-center justify-between group cursor-default">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                                                    <Tv className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-[#1D1D1F] truncate max-w-[120px]">{sub.note || sub.category}</p>
+                                                    <p className="text-[10px] font-medium text-gray-400 uppercase">{t('dashboard.monthly')}</p>
+                                                </div>
+                                            </div>
+                                            <p className="font-black text-[#1D1D1F]">{formatCurrency(sub.amount || 0)}</p>
+                                        </div>
+                                    ))}
+                                    <div className="pt-4 border-t border-gray-50 flex items-center justify-between">
+                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('dashboard.monthlySubscriptionsTotal')}</span>
+                                        <span className="text-sm font-black text-blue-600">{formatCurrency(stats.monthlySubsTotal)}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-xs text-gray-400 font-medium text-center py-4 italic">
+                                    {t('dashboard.noSubscriptionsFound')}
+                                </p>
+                            )}
+                        </div>
+                    </div>
 
                     {/* Goals Progress */}
                     <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.02)]">
