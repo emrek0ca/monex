@@ -1,11 +1,11 @@
 export type CheckoutPlan = 'pro_monthly' | 'pro_yearly' | 'pro_plus_monthly' | 'pro_plus_yearly' | 'extra_ai_100';
 
 const PAYMENT_LINKS: Record<CheckoutPlan, string> = {
-    pro_monthly: 'https://pay.lemon.com/monex-pro',
-    pro_yearly: 'https://pay.lemon.com/monex-pro-yearly',
-    pro_plus_monthly: 'https://pay.lemon.com/monex-pro-plus',
-    pro_plus_yearly: 'https://pay.lemon.com/monex-pro-plus',
-    extra_ai_100: 'https://pay.lemon.com/monex-pro-plus'
+    pro_monthly: import.meta.env.VITE_LEMON_SQUEEZY_PRO_MONTHLY || 'https://pay.lemon.com/monex-pro',
+    pro_yearly: import.meta.env.VITE_LEMON_SQUEEZY_PRO_YEARLY || 'https://pay.lemon.com/monex-pro-yearly',
+    pro_plus_monthly: import.meta.env.VITE_LEMON_SQUEEZY_PRO_PLUS_MONTHLY || 'https://pay.lemon.com/monex-pro-plus',
+    pro_plus_yearly: import.meta.env.VITE_LEMON_SQUEEZY_PRO_PLUS_YEARLY || 'https://pay.lemon.com/monex-pro-plus',
+    extra_ai_100: import.meta.env.VITE_LEMON_SQUEEZY_EXTRA_AI || 'https://pay.lemon.com/monex-pro-plus'
 };
 
 export class LemonSqueezyService {

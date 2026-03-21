@@ -11,7 +11,8 @@ export type ChatMessage = {
 // In a production environment, AI requests should be proxied through a secure backend 
 // (e.g., PocketBase hooks or a separate Edge Function) to keep the API key hidden.
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''; 
-const AI_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const AI_API_URL = import.meta.env.VITE_GROQ_API_URL || 'https://api.groq.com/openai/v1/chat/completions';
+const AI_MODEL = import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `You are Wiqo, an AI financial advisor for Monex.
 You are helpful, professional, and concise.
@@ -49,7 +50,7 @@ export class AIService {
                     'Authorization': `Bearer ${GROQ_API_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
+                    model: AI_MODEL,
                     messages: [
                         { role: 'system', content: SYSTEM_PROMPT + `\nContext: ${JSON.stringify(userContext)}` },
                         { role: 'user', content: query }
