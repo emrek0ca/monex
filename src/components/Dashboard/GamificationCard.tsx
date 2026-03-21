@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Flame, Star } from 'lucide-react';
 import { GamificationService } from '@/services/gamification.service';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface GamificationCardProps {
     xp: number;
@@ -12,6 +13,7 @@ interface GamificationCardProps {
 }
 
 export function GamificationCard({ xp, level, streak, className }: Omit<GamificationCardProps, 'league'>) {
+    const { t } = useTranslation();
     const currentLevel = GamificationService.getLevel(xp);
     const nextLevel = GamificationService.getNextLevel(xp);
     const currentLeague = GamificationService.getLeague(xp);
@@ -43,12 +45,14 @@ export function GamificationCard({ xp, level, streak, className }: Omit<Gamifica
                             {currentLeague.icon}
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">{currentLeague.name} Ligi</p>
+                            <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">
+                                {t(`users.league.${currentLeague.name}`, { defaultValue: currentLeague.name })} {t('gamification.league')}
+                            </p>
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">{currentLevel.title}</h3>
                         </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-white/40 tracking-wider">Seviye</p>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-white/40 tracking-wider">{t('gamification.level')}</p>
                         <p className="text-3xl font-black bg-gradient-to-br from-violet-600 to-indigo-600 bg-clip-text text-transparent">{level}</p>
                     </div>
                 </div>
@@ -57,11 +61,11 @@ export function GamificationCard({ xp, level, streak, className }: Omit<Gamifica
                 <div className="space-y-3">
                     <div className="flex justify-between items-end">
                         <div className="space-y-0.5">
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">İlerleme</span>
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{t('gamification.progress')}</span>
                             <p className="text-sm font-black text-slate-700 dark:text-white">{xp} <span className="text-[10px] text-slate-400 font-medium">XP</span></p>
                         </div>
                         <div className="text-right space-y-0.5">
-                            <span className="text-xs font-bold text-slate-400">Hedef</span>
+                            <span className="text-xs font-bold text-slate-400">{t('gamification.target')}</span>
                             <p className="text-sm font-black text-slate-500">{nextLevel?.minXp || 'MAX'}</p>
                         </div>
                     </div>
@@ -84,14 +88,14 @@ export function GamificationCard({ xp, level, streak, className }: Omit<Gamifica
                     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-orange-50/50 dark:bg-orange-500/5 border border-orange-100 dark:border-orange-500/10">
                         <Flame className={cn("h-5 w-5", streak > 0 ? "text-orange-500" : "text-slate-300 dark:text-white/20")} />
                         <div>
-                            <p className="text-[10px] text-orange-600/60 dark:text-orange-400/60 font-bold uppercase leading-none mb-1">Seri</p>
-                            <p className="text-sm font-black text-slate-700 dark:text-white leading-none">{streak} Gün</p>
+                            <p className="text-[10px] text-orange-600/60 dark:text-orange-400/60 font-bold uppercase leading-none mb-1">{t('gamification.streak')}</p>
+                            <p className="text-sm font-black text-slate-700 dark:text-white leading-none">{streak} {t('gamification.days')}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-50/50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/10">
                         <Star className="h-5 w-5 text-amber-500" />
                         <div>
-                            <p className="text-[10px] text-amber-600/60 dark:text-amber-400/60 font-bold uppercase leading-none mb-1">Başarı</p>
+                            <p className="text-[10px] text-amber-600/60 dark:text-amber-400/60 font-bold uppercase leading-none mb-1">{t('gamification.success')}</p>
                             <p className="text-sm font-black text-slate-700 dark:text-white leading-none">%85</p>
                         </div>
                     </div>

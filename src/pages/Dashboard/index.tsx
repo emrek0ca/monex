@@ -27,6 +27,7 @@ import { Button } from '@/components/UI/Button';
 import { pb } from '@/api/client';
 import { cn } from '@/lib/utils';
 import { format, subMonths, startOfMonth, endOfMonth, differenceInDays } from 'date-fns';
+import { tr, enUS } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
 import { MonexTransactionsResponse, MonexAccountsResponse, MonexGoalsResponse, MonexBudgetsResponse, Collections } from '@/types/pocketbase-types';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
@@ -38,11 +39,13 @@ import { AIAssistant } from '@/components/Dashboard/AIAssistant';
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { user } = useUserStore();
     const { isPremium, plan } = useSubscriptionStore();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showAddTransaction, setShowAddTransaction] = useState(false);
+
+    const dateLocale = i18n.language === 'tr' ? tr : enUS;
 
     // Limit history based on tier
     const historyLimitDays = isPremium ? 10000 : 7; // Pro/Pro+ get effectively unlimited history
@@ -173,14 +176,22 @@ export default function Dashboard() {
         };
     }, [transactions, allTransactions.length, accounts, goals, budgets, isPremium]);
 
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
+    };
+
     const isLoading = txLoading || accLoading;
 
     if (isLoading) {
         return (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full items-center justify-center min-h-[400px]">
                 <div className="text-center">
                     <RefreshCcw className="h-8 w-8 animate-spin text-violet-600 mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">Loading your dashboard...</p>
+                    <p className="text-sm text-gray-500">{t('dashboard.loading')}</p>
                 </div>
             </div>
         );
@@ -211,7 +222,7 @@ export default function Dashboard() {
                             className="inline-flex items-center gap-2.5 rounded-full bg-[#1D1D1F]/[0.03] border border-[#1D1D1F]/5 px-4 py-1.5 backdrop-blur-md"
                         >
                             <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1D1D1F]/60">Finansal İstihbarat</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1D1D1F]/60">{t('dashboard.financialIntelligence')}</span>
                         </motion.div>
 
                         <div className="space-y-3">
@@ -223,17 +234,17 @@ export default function Dashboard() {
                             {stats.isHistoryRestricted ? (
                                 <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#FFF9E6] border border-[#FFE8A3] shadow-inner text-[#855D00]">
                                     <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
-                                    <span className="text-sm font-semibold">Ücretsiz Plan: <span className="opacity-70 font-medium">Son 7 gün</span></span>
+                                    <span className="text-sm font-semibold">{t('dashboard.freePlanLimit')}</span>
                                     <button
                                         onClick={() => setShowUpgradeModal(true)}
                                         className="text-xs font-black uppercase tracking-widest bg-white rounded-full px-3 py-1 shadow-sm hover:scale-105 transition-transform"
                                     >
-                                        Yükselt
+                                        {t('dashboard.upgrade')}
                                     </button>
                                 </div>
                             ) : (
                                 <p className="text-[#86868B] text-xl font-medium max-w-lg leading-relaxed">
-                                    {t('dashboard.subtitle') || "Finansal durumunuzu kontrol edin ve hedeflerinize bir adım daha yaklaşın."}
+                                    {t('dashboard.subtitle')}
                                 </p>
                             )}
                         </div>
@@ -246,7 +257,7 @@ export default function Dashboard() {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <Plus className="h-5 w-5 mr-2" />
-                                <span className="relative">{t('transactions.add')}</span>
+                                <span className="relative">{t('transactions.addTransaction')}</span>
                             </Button>
 
                             <Button
@@ -272,7 +283,7 @@ export default function Dashboard() {
                                     <Wallet className="h-8 w-8 text-[#1D1D1F]" />
                                 </div>
                                 <div className="flex flex-col items-end">
-                                    <span className="text-[11px] font-black text-[#86868B] uppercase tracking-[0.3em]">Total Assets</span>
+                                    <span className="text-[11px] font-black text-[#86868B] uppercase tracking-[0.3em]">{t('dashboard.totalAssets')}</span>
                                     <div className="mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 font-bold text-xs border border-emerald-100">
                                         <TrendingUp className="h-3.5 w-3.5" />
                                         <span>2.4%</span>
@@ -282,19 +293,19 @@ export default function Dashboard() {
 
                             <div className="space-y-1">
                                 <h2 className="text-5xl sm:text-6xl font-black text-[#1D1D1F] tracking-tight">
-                                    ${(stats.totalBalance || 0).toLocaleString()}
+                                    {formatCurrency(stats.totalBalance || 0)}
                                 </h2>
-                                <p className="text-lg font-medium text-[#86868B]">Kullanılabilir Bakiye</p>
+                                <p className="text-lg font-medium text-[#86868B]">{t('dashboard.availableBalance')}</p>
                             </div>
 
                             <div className="mt-10 grid grid-cols-2 gap-4 border-t border-gray-100 pt-10">
                                 <div>
-                                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">Gelir</p>
-                                    <p className="text-xl font-bold text-emerald-600 tracking-tight">${stats.currentIncome.toLocaleString()}</p>
+                                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">{t('dashboard.in')}</p>
+                                    <p className="text-xl font-bold text-emerald-600 tracking-tight">{formatCurrency(stats.currentIncome)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">Gider</p>
-                                    <p className="text-xl font-bold text-[#1D1D1F] tracking-tight">${stats.currentExpense.toLocaleString()}</p>
+                                    <p className="text-[10px] font-bold text-[#86868B] uppercase tracking-widest mb-1">{t('dashboard.out')}</p>
+                                    <p className="text-xl font-bold text-[#1D1D1F] tracking-tight">{formatCurrency(stats.currentExpense)}</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -326,7 +337,7 @@ export default function Dashboard() {
                     </div>
                     <div className="space-y-1">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t('transactions.income')}</p>
-                        <h3 className="text-3xl font-black text-[#1D1D1F] tracking-tight">${stats.currentIncome.toLocaleString()}</h3>
+                        <h3 className="text-3xl font-black text-[#1D1D1F] tracking-tight">{formatCurrency(stats.currentIncome)}</h3>
                     </div>
                     {/* Refined Sparkline */}
                     <div className="mt-8 h-10 w-full opacity-20 border-t border-gray-50 pt-4">
@@ -365,7 +376,7 @@ export default function Dashboard() {
                     </div>
                     <div className="space-y-1">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t('transactions.expense')}</p>
-                        <h3 className="text-3xl font-black text-[#1D1D1F] tracking-tight">${stats.currentExpense.toLocaleString()}</h3>
+                        <h3 className="text-3xl font-black text-[#1D1D1F] tracking-tight">{formatCurrency(stats.currentExpense)}</h3>
                     </div>
                     {/* Refined Sparkline */}
                     <div className="mt-8 h-10 w-full opacity-20 border-t border-gray-50 pt-4">
@@ -395,7 +406,7 @@ export default function Dashboard() {
                             <Target className="h-7 w-7" />
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-black px-3 py-1.5 rounded-full bg-violet-50 text-violet-600 border border-violet-100 uppercase tracking-widest">
-                            AYLIK
+                            {t('dashboard.monthly')}
                         </div>
                     </div>
                     <div className="space-y-1">
@@ -410,7 +421,7 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-8 border-t border-gray-50 pt-4">
                         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
-                            {stats.currentIncome - stats.currentExpense >= 0 ? 'Harcama Dengeli' : 'Bütçe Aşımı'}
+                            {stats.currentIncome - stats.currentExpense >= 0 ? t('dashboard.budgetStatusBalanced') : t('dashboard.budgetStatusOver')}
                         </p>
                     </div>
                 </motion.div>
@@ -428,11 +439,11 @@ export default function Dashboard() {
                             <PieChart className="h-7 w-7" />
                         </div>
                         <div className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] border border-gray-100 px-3 py-1.5 rounded-full bg-gray-50">
-                            {stats.budgetCount} Bütçe
+                            {stats.budgetCount} {t('nav.budgets')}
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t('nav.budgets')}</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{t('dashboard.budgetUsage')}</p>
                         <div className="flex items-baseline gap-2">
                             <h3 className={cn(
                                 "text-3xl font-black tracking-tight",
@@ -441,7 +452,7 @@ export default function Dashboard() {
                             )}>
                                 {stats.budgetUsage.toFixed(0)}%
                             </h3>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Doluluk</span>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('dashboard.budgetFullness')}</span>
                         </div>
                     </div>
                     <div className="mt-8 relative h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100/50 shadow-inner">
@@ -472,7 +483,7 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{t('dashboard.overview')}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Income vs Expenses over time</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.incomeVsExpense')}</p>
                             </div>
                             <Button
                                 variant="ghost"
@@ -511,12 +522,12 @@ export default function Dashboard() {
                     >
                         <div className="flex items-center gap-2 mb-3">
                             <Sparkles className="h-4 w-4 text-amber-300" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Wiqo İçgörüsü</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">{t('dashboard.wiqoInsight')}</span>
                         </div>
                         <p className="text-sm font-medium leading-relaxed italic">
                             "{plan === 'pro_plus'
-                                ? "Geçen aya göre abonelik harcamalarında %15 tasarruf edebilirsin. Detaylar analiz sayfasında."
-                                : "Pro plana geçerek AI destekli harcama tahminlerine ulaşabilirsin."}"
+                                ? t('dashboard.wiqoInsightPro')
+                                : t('dashboard.wiqoInsightFree')}"
                         </p>
                     </motion.div>
 
@@ -530,7 +541,7 @@ export default function Dashboard() {
                                 <span className="font-medium text-gray-900 dark:text-white">{t('nav.goals')}</span>
                             </div>
                             <span className="text-xs px-2 py-1 rounded-full bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 font-medium">
-                                {stats.goalCount} active
+                                {stats.goalCount} {t('dashboard.active')}
                             </span>
                         </div>
                         <div className="relative h-3 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
@@ -542,14 +553,14 @@ export default function Dashboard() {
                             />
                         </div>
                         <div className="flex items-center justify-between mt-3">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{stats.goalsProgress.toFixed(0)}% complete</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{stats.goalsProgress.toFixed(0)}% {t('dashboard.complete')}</p>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => navigate('/app/goals')}
                                 className="text-xs h-7 px-2 text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-500/10"
                             >
-                                View <ArrowRight className="h-3 w-3 ml-1" />
+                                {t('dashboard.view')} <ArrowRight className="h-3 w-3 ml-1" />
                             </Button>
                         </div>
                     </div>
@@ -562,16 +573,16 @@ export default function Dashboard() {
                                     <Clock className="h-5 w-5 text-blue-600" />
                                 </div>
                                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">
-                                    {t('goals.nextDeadline') || 'Upcoming'}
+                                    {t('goals.nextDeadline')}
                                 </span>
                             </div>
                             <p className="font-black text-[#1D1D1F] text-lg mb-2">{stats.upcomingGoal.title}</p>
                             <div className="flex items-center justify-between mt-4">
                                 <span className="text-sm font-bold text-gray-500">
-                                    ${(stats.upcomingGoal.currentAmount || 0).toLocaleString()} / ${(stats.upcomingGoal.targetAmount || 0).toLocaleString()}
+                                    {formatCurrency(stats.upcomingGoal.currentAmount || 0)} / {formatCurrency(stats.upcomingGoal.targetAmount || 0)}
                                 </span>
                                 <span className="text-[10px] font-black px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 uppercase tracking-widest">
-                                    {stats.upcomingGoal.deadline && differenceInDays(new Date(stats.upcomingGoal.deadline), new Date())} GÜN KALDI
+                                    {stats.upcomingGoal.deadline && differenceInDays(new Date(stats.upcomingGoal.deadline), new Date())} {t('dashboard.daysLeft')}
                                 </span>
                             </div>
                         </div>
@@ -581,8 +592,8 @@ export default function Dashboard() {
                     <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-gray-100 dark:border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h4 className="font-bold text-[#1D1D1F] dark:text-white tracking-tight">Hızlı Yönetim</h4>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Yönetim Konsolu</p>
+                                <h4 className="font-bold text-[#1D1D1F] dark:text-white tracking-tight">{t('dashboard.quickManagement')}</h4>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{t('dashboard.managementConsole')}</p>
                             </div>
                             <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
                                 <Zap className="h-4 w-4 text-gray-400" />
@@ -605,7 +616,7 @@ export default function Dashboard() {
                                     </div>
                                     <div className="flex-1 text-left">
                                         <span className="text-sm font-bold text-[#1D1D1F] dark:text-gray-300 transition-colors group-hover:text-blue-600">{action.label}</span>
-                                        <p className="text-[10px] text-gray-400 font-medium">Yönetim Paneline Git</p>
+                                        <p className="text-[10px] text-gray-400 font-medium">{t('dashboard.goToPanel')}</p>
                                     </div>
                                     <ChevronRight className="h-4 w-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
                                 </button>
@@ -625,7 +636,7 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between p-10 pb-6 border-b border-gray-50">
                         <div>
                             <h3 className="font-black text-2xl text-[#1D1D1F] tracking-tight">{t('dashboard.recentTransactions')}</h3>
-                            <p className="text-sm font-medium text-gray-500 mt-1">Son finansal aktiviteleriniz ve işlem detayları</p>
+                            <p className="text-sm font-medium text-gray-500 mt-1">{t('dashboard.recentActivity')}</p>
                         </div>
                         <Button
                             variant="outline"
@@ -633,7 +644,7 @@ export default function Dashboard() {
                             onClick={() => navigate('/app/transactions')}
                             className="bg-gray-50 border-gray-100 text-[#1D1D1F] hover:bg-gray-100 rounded-2xl px-6 h-12 font-bold"
                         >
-                            Tümünü Gör
+                            {t('common.viewAll')}
                             <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                     </div>
@@ -644,14 +655,14 @@ export default function Dashboard() {
                                 <div className="h-20 w-20 rounded-[2rem] bg-gray-50 flex items-center justify-center mx-auto mb-6 border border-gray-100 shadow-inner">
                                     <Wallet className="h-10 w-10 text-gray-300" />
                                 </div>
-                                <h4 className="text-[#1D1D1F] font-black text-xl mb-2">Henüz işlem yok</h4>
-                                <p className="text-sm text-gray-400 font-medium max-w-xs mx-auto mb-8">Harcamalarınızı ekledikçe burada detaylı bir döküm göreceksiniz.</p>
+                                <h4 className="text-[#1D1D1F] font-black text-xl mb-2">{t('dashboard.noTransactions')}</h4>
+                                <p className="text-sm text-gray-400 font-medium max-w-xs mx-auto mb-8">{t('dashboard.noTransactionsDesc')}</p>
                                 <Button
                                     onClick={() => setShowAddTransaction(true)}
                                     className="bg-[#1D1D1F] hover:bg-black text-white rounded-2xl h-12 px-8 font-bold shadow-lg"
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
-                                    İlk İşlemi Başlat
+                                    {t('dashboard.startFirstTransaction')}
                                 </Button>
                             </div>
                         ) : (
@@ -683,10 +694,10 @@ export default function Dashboard() {
                                                 <p className="font-black text-[#1D1D1F] text-lg truncate leading-tight mb-1">{tx.note || tx.category}</p>
                                                 <div className="flex items-center gap-3">
                                                     <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                                                        {tx.date && format(new Date(tx.date), 'dd MMM yyyy')}
+                                                        {tx.date && format(new Date(tx.date), 'dd MMM yyyy', { locale: dateLocale })}
                                                     </p>
                                                     <span className="h-1 w-1 rounded-full bg-gray-200" />
-                                                    <p className="text-[11px] font-bold text-blue-500 uppercase tracking-widest">{tx.category || 'Genel'}</p>
+                                                    <p className="text-[11px] font-bold text-blue-500 uppercase tracking-widest">{tx.category || t('transactions.uncategorized')}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -695,9 +706,9 @@ export default function Dashboard() {
                                                 "text-xl font-black tracking-tighter",
                                                 tx.type === 'income' ? "text-emerald-600" : "text-[#1D1D1F]"
                                             )}>
-                                                {tx.type === 'income' ? '+' : '-'}${(tx.amount || 0).toLocaleString()}
+                                                {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount || 0)}
                                             </p>
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">İşlem Onaylandı</p>
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">{t('dashboard.transactionConfirmed')}</p>
                                         </div>
                                     </motion.div>
                                 ))}
