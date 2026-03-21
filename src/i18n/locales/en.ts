@@ -484,6 +484,9 @@ gamification: {
         totalTransactions: 'Total Transactions',
         thisMonth: 'This Month',
         netStatus: 'Net Status',
+        exportCSV: 'Export as CSV',
+        exportSuccess: 'Data exported successfully',
+        exportError: 'Error occurred during export',
     },
 
     // Budgets

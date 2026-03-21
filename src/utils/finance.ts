@@ -79,5 +79,27 @@ export const FinanceUtils = {
         }
 
         return projection;
+    },
+
+    /**
+     * Converts transactions to CSV string
+     */
+    exportToCSV: (transactions: MonexTransactionsResponse[], headers: Record<string, string>) => {
+        const rows = [
+            [headers.date, headers.category, headers.note, headers.type, headers.amount].join(',')
+        ];
+
+        transactions.forEach(t => {
+            const row = [
+                t.date?.split(' ')[0] || '',
+                t.category || '',
+                `"${(t.note || '').replace(/"/g, '""')}"`,
+                t.type || '',
+                t.amount || 0
+            ];
+            rows.push(row.join(','));
+        });
+
+        return rows.join('\n');
     }
 };

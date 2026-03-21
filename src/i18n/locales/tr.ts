@@ -484,6 +484,9 @@ gamification: {
         totalTransactions: 'Toplam İşlem',
         thisMonth: 'Bu Ay',
         netStatus: 'Net Durum',
+        exportCSV: 'CSV Olarak İndir',
+        exportSuccess: 'Veriler başarıyla dışa aktarıldı',
+        exportError: 'Dışa aktarma sırasında hata oluştu',
     },
 
     // Budgets

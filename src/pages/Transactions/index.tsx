@@ -14,12 +14,15 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Loader2,
-    ArrowRightLeft
+    ArrowRightLeft,
+    Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { tr, enUS } from 'date-fns/locale';
+import { FinanceUtils } from '@/utils/finance';
+import { toast } from 'sonner';
 
 export default function Transactions() {
     const { t, i18n } = useTranslation();
@@ -28,7 +31,6 @@ export default function Transactions() {
     const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
 
     const dateLocale = i18n.language === 'tr' ? tr : enUS;
-    const currencySymbol = user?.currency || '$';
 
     const { data: transactions, isLoading } = useQuery({
         queryKey: ['transactions', 'all', user?.id],
@@ -69,6 +71,43 @@ export default function Transactions() {
         return (transactions || []).filter(tx => tx.type === filterType);
     }, [transactions, filterType]);
 
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
+    };
+
+    const handleExport = () => {
+        if (!transactions || transactions.length === 0) return;
+
+        try {
+            const headers = {
+                date: t('transactions.date'),
+                category: t('transactions.category'),
+                note: t('transactions.note'),
+                type: t('transactions.type'),
+                amount: t('transactions.amount'),
+            };
+
+            const csvContent = FinanceUtils.exportToCSV(transactions, headers);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `monex_transactions_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast.success(t('transactions.exportSuccess'));
+        } catch (error) {
+            console.error('Export error:', error);
+            toast.error(t('transactions.exportError'));
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-full items-center justify-center min-h-[400px]">
@@ -80,14 +119,6 @@ export default function Transactions() {
         );
     }
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
-            style: 'currency',
-            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
-            currencyDisplay: 'narrowSymbol'
-        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
-    };
-
     return (
         <div className="space-y-6">
             <AddTransactionModal
@@ -95,7 +126,7 @@ export default function Transactions() {
                 onClose={() => setShowAddModal(false)}
             />
 
-            {/* Header - Apple Style */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
                 <div>
                     <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1D1D1F]">
@@ -105,22 +136,28 @@ export default function Transactions() {
                         {t('transactions.subtitle')}
                     </p>
                 </div>
-                <Button
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-[#007AFF] hover:bg-[#0071E3] text-white font-semibold rounded-full px-6 py-6 shadow-xl shadow-blue-500/10"
-                >
-                    <Plus className="h-5 w-5 mr-2" />
-                    {t('transactions.addTransaction')}
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={handleExport}
+                        className="rounded-full px-6 h-12 border-gray-200 font-bold text-gray-600 hover:bg-gray-50"
+                    >
+                        <Download className="h-4 w-4 mr-2" />
+                        {t('transactions.exportCSV')}
+                    </Button>
+                    <Button
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-[#007AFF] hover:bg-[#0071E3] text-white font-bold rounded-full px-8 h-12 shadow-xl shadow-blue-500/10"
+                    >
+                        <Plus className="h-5 w-5 mr-2" />
+                        {t('transactions.addTransaction')}
+                    </Button>
+                </div>
             </div>
 
-            {/* Stats Cards - Apple Perspective */}
+            {/* Stats Cards */}
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                {/* Total Transactions */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('transactions.totalTransactions')}</span>
@@ -135,12 +172,7 @@ export default function Transactions() {
                     </div>
                 </motion.div>
 
-                {/* Income */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('dashboard.in')}</span>
@@ -155,12 +187,7 @@ export default function Transactions() {
                     </div>
                 </motion.div>
 
-                {/* Expenses */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('dashboard.out')}</span>
@@ -175,12 +202,7 @@ export default function Transactions() {
                     </div>
                 </motion.div>
 
-                {/* Net */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
                     <div className="bg-white rounded-[2rem] p-6 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('transactions.netStatus')}</span>
@@ -206,7 +228,7 @@ export default function Transactions() {
                 </motion.div>
             </div>
 
-            {/* Filter Tabs - Apple Pill Style */}
+            {/* Filter Tabs */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -237,7 +259,7 @@ export default function Transactions() {
                 ))}
             </motion.div>
 
-            {/* Transactions List - Apple Style */}
+            {/* Transactions List */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
