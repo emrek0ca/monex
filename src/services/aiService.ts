@@ -2,6 +2,7 @@ import { pb } from '@/api/client';
 import { MonexTransactionsResponse, MonexAccountsResponse } from '@/types/pocketbase-types';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
 import i18n from '@/i18n';
+import { toast } from 'sonner';
 
 export type ChatMessage = {
     role: 'system' | 'user' | 'assistant';
@@ -33,6 +34,9 @@ export class AIService {
         // 0. Check subscription limits
         const subStore = useSubscriptionStore.getState();
         if (subStore.aiQueriesRemaining <= 0 && subStore.plan !== 'pro_plus') {
+            toast.error(i18n.t('ai.dailyLimitReached'), {
+                description: i18n.t('ai.limitReachedDesc'),
+            });
             return i18n.t('ai.limitReachedDesc');
         }
 
@@ -77,6 +81,7 @@ export class AIService {
 
         } catch (error) {
             console.error("AI Service Error:", error);
+            toast.error(i18n.t('ai.error'));
             return i18n.t('ai.error');
         }
     }

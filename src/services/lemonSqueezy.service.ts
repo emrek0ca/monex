@@ -1,3 +1,5 @@
+import { useSubscriptionStore } from '@/store/subscriptionStore';
+
 export type CheckoutPlan = 'pro_monthly' | 'pro_yearly' | 'pro_plus_monthly' | 'pro_plus_yearly' | 'extra_ai_100';
 
 const PAYMENT_LINKS: Record<CheckoutPlan, string> = {
@@ -29,7 +31,9 @@ export class LemonSqueezyService {
      * Lemon Squeezy webhooks should handle the actual database updates
      */
     static async syncSubscription(): Promise<void> {
-        // This would typically trigger a background sync or refresh the local store
+        // Trigger a background sync or refresh the local store
         // from the PocketBase collection that's updated via webhooks.
+        const subStore = useSubscriptionStore.getState();
+        await subStore.refreshSubscription();
     }
 }
