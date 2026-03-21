@@ -258,16 +258,31 @@ export const tr = {
         budgetStatusBalanced: 'Harcama Dengeli',
         budgetStatusOver: 'Bütçe Aşımı',
     },
+// Gamification
+gamification: {
+    league: 'Ligi',
+    level: 'Seviye',
+    progress: 'İlerleme',
+    target: 'Hedef',
+    streak: 'Seri',
+    days: 'Gün',
+    success: 'Başarı',
+    leagues: {
+        bronze: 'Bronz',
+        silver: 'Gümüş',
+        gold: 'Altın',
+        diamond: 'Elmas',
+        elite: 'Elit',
+    },
+    levels: {
+        novice: 'Acemi',
+        apprentice: 'Çırak',
+        explorer: 'Kaşif',
+        strategist: 'Stratejist',
+        master: 'Usta',
+    }
+},
 
-    // Gamification
-    gamification: {
-        league: 'Ligi',
-        level: 'Seviye',
-        progress: 'İlerleme',
-        target: 'Hedef',
-        streak: 'Seri',
-        days: 'Gün',
-        // Premium Features
         premium: {
             aiInsights: 'AI İçgörüleri',
             financialHealth: 'Finansal Sağlık',

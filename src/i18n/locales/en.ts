@@ -258,16 +258,31 @@ export const en = {
         budgetStatusBalanced: 'Spending Balanced',
         budgetStatusOver: 'Over Budget',
     },
+// Gamification
+gamification: {
+    league: 'League',
+    level: 'Level',
+    progress: 'Progress',
+    target: 'Target',
+    streak: 'Streak',
+    days: 'Days',
+    success: 'Success',
+    leagues: {
+        bronze: 'Bronze',
+        silver: 'Silver',
+        gold: 'Gold',
+        diamond: 'Diamond',
+        elite: 'Elite',
+    },
+    levels: {
+        novice: 'Novice',
+        apprentice: 'Apprentice',
+        explorer: 'Explorer',
+        strategist: 'Strategist',
+        master: 'Master',
+    }
+},
 
-    // Gamification
-    gamification: {
-        league: 'League',
-        level: 'Level',
-        progress: 'Progress',
-        target: 'Target',
-        streak: 'Streak',
-        days: 'Days',
-        // Premium Features
         premium: {
             aiInsights: 'AI Insights',
             financialHealth: 'Financial Health',

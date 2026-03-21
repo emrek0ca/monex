@@ -46,9 +46,11 @@ export function GamificationCard({ xp, level, streak, className }: Omit<Gamifica
                         </div>
                         <div>
                             <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-widest">
-                                {t(`users.league.${currentLeague.name}`, { defaultValue: currentLeague.name })} {t('gamification.league')}
+                                {t(currentLeague.nameKey)} {t('gamification.league')}
                             </p>
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">{currentLevel.title}</h3>
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">
+                                {t(currentLevel.titleKey)}
+                            </h3>
                         </div>
                     </div>
                     <div className="text-right">
@@ -77,7 +79,6 @@ export function GamificationCard({ xp, level, streak, className }: Omit<Gamifica
                             transition={{ duration: 1.2, ease: "circOut" }}
                             className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 via-indigo-500 to-purple-600 rounded-full"
                         >
-                            {/* Subtle gloss effect */}
                             <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
                         </motion.div>
                     </div>

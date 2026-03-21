@@ -3,19 +3,19 @@ import { Collections, MonexUsersResponse } from '@/types/pocketbase-types';
 import { differenceInCalendarDays } from 'date-fns';
 
 export const LEVELS = [
-    { level: 1, minXp: 0, title: 'Novice' },
-    { level: 2, minXp: 500, title: 'Apprentice' },
-    { level: 3, minXp: 1500, title: 'Explorer' },
-    { level: 4, minXp: 3000, title: 'Strategist' },
-    { level: 5, minXp: 5000, title: 'Master' },
+    { level: 1, minXp: 0, titleKey: 'gamification.levels.novice' },
+    { level: 2, minXp: 500, titleKey: 'gamification.levels.apprentice' },
+    { level: 3, minXp: 1500, titleKey: 'gamification.levels.explorer' },
+    { level: 4, minXp: 3000, titleKey: 'gamification.levels.strategist' },
+    { level: 5, minXp: 5000, titleKey: 'gamification.levels.master' },
 ];
 
 export const LEAGUES = [
-    { name: 'Bronz', minXp: 0, icon: '🥉' },
-    { name: 'Gümüş', minXp: 1000, icon: '🥈' },
-    { name: 'Altın', minXp: 2500, icon: '🥇' },
-    { name: 'Elmas', minXp: 5000, icon: '💠' },
-    { name: 'Elit', minXp: 10000, icon: '👑' },
+    { name: 'Bronze', nameKey: 'gamification.leagues.bronze', minXp: 0, icon: '🥉' },
+    { name: 'Silver', nameKey: 'gamification.leagues.silver', minXp: 1000, icon: '🥈' },
+    { name: 'Gold', nameKey: 'gamification.leagues.gold', minXp: 2500, icon: '🥇' },
+    { name: 'Diamond', nameKey: 'gamification.leagues.diamond', minXp: 5000, icon: '💠' },
+    { name: 'Elite', nameKey: 'gamification.leagues.elite', minXp: 10000, icon: '👑' },
 ];
 
 export class GamificationService {
