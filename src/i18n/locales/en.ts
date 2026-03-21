@@ -510,6 +510,15 @@ gamification: {
         exportCSV: 'Export as CSV',
         exportSuccess: 'Data exported successfully',
         exportError: 'Error occurred during export',
+        searchPlaceholder: 'Search transactions (note, category...)',
+        filterByDate: 'Date Range',
+        filterByAmount: 'Minimum Amount',
+        filterByAccount: 'Account',
+        clearFilters: 'Clear Filters',
+        last30Days: 'Last 30 Days',
+        thisYear: 'This Year',
+        allTime: 'All Time',
+        customRange: 'Custom Range',
     },
 
     // Budgets

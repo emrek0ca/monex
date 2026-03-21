@@ -510,6 +510,15 @@ gamification: {
         exportCSV: 'CSV Olarak İndir',
         exportSuccess: 'Veriler başarıyla dışa aktarıldı',
         exportError: 'Dışa aktarma sırasında hata oluştu',
+        searchPlaceholder: 'İşlemlerde ara (not, kategori...)',
+        filterByDate: 'Tarih Aralığı',
+        filterByAmount: 'Minimum Tutar',
+        filterByAccount: 'Hesap',
+        clearFilters: 'Filtreleri Temizle',
+        last30Days: 'Son 30 Gün',
+        thisYear: 'Bu Yıl',
+        allTime: 'Tüm Zamanlar',
+        customRange: 'Özel Aralık',
     },
 
     // Budgets
