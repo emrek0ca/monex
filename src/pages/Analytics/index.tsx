@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { pb } from '@/api/client';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useUserStore } from '@/store/userStore';
 import { Collections, MonexTransactionsResponse, MonexAccountsResponse } from '@/types/pocketbase-types';
 import { UpgradeModal } from '@/components/UI/UpgradeModal';
 import { BarChart3, PieChart, TrendingUp, Calendar, Loader2, ArrowUpRight, ArrowDownRight, Wallet, Sparkles, ChevronRight } from 'lucide-react';
@@ -23,6 +24,7 @@ import {
     Legend
 } from 'recharts';
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
+import { tr, enUS } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -32,10 +34,12 @@ const COLORS = [
 ];
 
 export default function Analytics() {
-    const { t } = useTranslation();
-    const user = pb.authStore.model;
+    const { t, i18n } = useTranslation();
+    const { user } = useUserStore();
     const { plan } = useSubscriptionStore();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+    const dateLocale = i18n.language === 'tr' ? tr : enUS;
 
     // Determine history limit based on tier
     const historyLimitDays = plan === 'pro_plus' ? 36500 : (plan === 'pro' ? 365 : 7);
@@ -44,34 +48,49 @@ export default function Analytics() {
     const { data: allTransactions = [], isLoading } = useQuery({
         queryKey: ['analyticsTransactions', user?.id, historyLimitDays],
         queryFn: async () => {
-            // For 7 days we use subDays, but let's just use a safe date
+            if (!user?.id) return [];
+            
             const dateFilter = historyLimitDays === 7
                 ? format(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
                 : format(subMonths(new Date(), historyLimitDays === 365 ? 12 : 1200), 'yyyy-MM-dd');
 
             return pb.collection(Collections.MonexTransactions).getFullList<MonexTransactionsResponse>({
                 sort: '-date',
-                filter: `user='${user?.id}' && date >= '${dateFilter}'`
+                filter: pb.filter('user = {:userId} && date >= {:dateFilter}', { userId: user.id, dateFilter })
             });
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
 
-    // We don't need a sub-filter here since the API already filters it,
-    // but we'll call it 'transactions' to keep compatibility with the rest of the file
     const transactions = allTransactions;
 
     // Fetch accounts
     const { data: accounts = [] } = useQuery({
         queryKey: ['analyticsAccounts', user?.id],
         queryFn: async () => {
+            if (!user?.id) return [];
             return pb.collection(Collections.MonexAccounts).getFullList<MonexAccountsResponse>({
                 sort: 'name',
-                filter: `user='${user?.id}'`
+                filter: pb.filter('user = {:userId}', { userId: user.id })
             });
         },
-        enabled: !!user,
+        enabled: !!user?.id,
     });
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
+    };
+
+    const getTranslatedCategory = (category: string) => {
+        // Simple mapping for common categories if they exist in i18n
+        const key = `categories.${category.toLowerCase()}`;
+        const translated = t(key);
+        return translated === key ? category : translated;
+    };
 
     // Calculate spending by category
     const categoryData = useMemo(() => {
@@ -83,10 +102,13 @@ export default function Analytics() {
             }
         });
         return Object.entries(categories)
-            .map(([name, value]) => ({ name, value }))
+            .map(([name, value]) => ({ 
+                name: getTranslatedCategory(name), 
+                value 
+            }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 8);
-    }, [transactions]);
+    }, [transactions, t]);
 
     // Calculate monthly income vs expense
     const monthlyData = useMemo(() => {
@@ -113,13 +135,13 @@ export default function Analytics() {
                 .reduce((sum: number, tx: MonexTransactionsResponse) => sum + (tx.amount || 0), 0);
 
             return {
-                month: format(month, 'MMM'),
+                month: format(month, 'MMM', { locale: dateLocale }),
                 income,
                 expense,
                 net: income - expense
             };
         });
-    }, [transactions, historyLimitDays]);
+    }, [transactions, historyLimitDays, dateLocale]);
 
     // Calculate totals
     const totals = useMemo(() => {
@@ -157,8 +179,11 @@ export default function Analytics() {
 
     if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex h-full items-center justify-center min-h-[400px]">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">{t('analytics.loading')}</p>
+                </div>
             </div>
         );
     }
@@ -187,10 +212,10 @@ export default function Analytics() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest leading-none mb-1">
-                                {plan === 'free' ? 'SINIRLI GEÇMİŞ (7 GÜN)' : 'PRO GEÇMİŞ (1 YIL)'}
+                                {plan === 'free' ? t('analytics.limitedHistory') : t('analytics.proHistory')}
                             </p>
                             <p className="text-[11px] text-amber-700 font-medium">
-                                Tüm verileri görmek için Pro+'a geçin
+                                {t('analytics.upgradeForFull')}
                             </p>
                         </div>
                         <Button
@@ -222,10 +247,10 @@ export default function Analytics() {
                             </div>
                         </div>
                         <p className="text-2xl sm:text-3xl font-bold text-emerald-600 tracking-tight">
-                            ${totals.totalIncome.toLocaleString()}
+                            {formatCurrency(totals.totalIncome)}
                         </p>
                         <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">
-                            AYLIK ORT: ${totals.avgMonthlyIncome.toFixed(0)}
+                            {t('analytics.monthlyAvg')}: {formatCurrency(totals.avgMonthlyIncome)}
                         </p>
                     </div>
                 </motion.div>
@@ -243,10 +268,10 @@ export default function Analytics() {
                             </div>
                         </div>
                         <p className="text-2xl sm:text-3xl font-bold text-rose-600 tracking-tight">
-                            ${totals.totalExpense.toLocaleString()}
+                            {formatCurrency(totals.totalExpense)}
                         </p>
                         <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">
-                            AYLIK ORT: ${totals.avgMonthlyExpense.toFixed(0)}
+                            {t('analytics.monthlyAvg')}: {formatCurrency(totals.avgMonthlyExpense)}
                         </p>
                     </div>
                 </motion.div>
@@ -264,7 +289,7 @@ export default function Analytics() {
                             </div>
                         </div>
                         <p className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight">
-                            ${totals.totalBalance.toLocaleString()}
+                            {formatCurrency(totals.totalBalance)}
                         </p>
                         <p className="text-[10px] font-bold text-gray-400 mt-2 uppercase tracking-widest">
                             {accounts.length} {t('accounts.accountCount')}
@@ -309,7 +334,7 @@ export default function Analytics() {
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight">{t('analytics.monthlyTrend')}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">GELİR VE GİDER ANALİZİ</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('analytics.incomeExpenseAnalysis')}</p>
                         </div>
                         <TrendingUp className="h-5 w-5 text-gray-400" />
                     </div>
@@ -339,7 +364,7 @@ export default function Analytics() {
                                     tick={{ fill: '#86868B' }}
                                     axisLine={false}
                                     tickLine={false}
-                                    tickFormatter={(v) => `$${v}`}
+                                    tickFormatter={(v) => formatCurrency(v).split('.')[0]}
                                 />
                                 <Tooltip
                                     contentStyle={{
@@ -352,7 +377,7 @@ export default function Analytics() {
                                     }}
                                     itemStyle={{ fontSize: '12px', fontWeight: '700' }}
                                     labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#86868B', marginBottom: '8px', textTransform: 'uppercase' }}
-                                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                    formatter={(value: number) => [formatCurrency(value), '']}
                                 />
                                 <Area type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={3} fill="url(#incomeGradient)" name={t('analytics.income')} />
                                 <Area type="monotone" dataKey="expense" stroke="#ef4444" strokeWidth={3} fill="url(#expenseGradient)" name={t('analytics.expense')} />
@@ -371,7 +396,7 @@ export default function Analytics() {
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight">{t('analytics.spendingByCategory')}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">KATEGORİ DAĞILIMI</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('analytics.categoryDistribution')}</p>
                         </div>
                         <PieChart className="h-5 w-5 text-gray-400" />
                     </div>
@@ -404,7 +429,7 @@ export default function Analytics() {
                                             padding: '12px'
                                         }}
                                         itemStyle={{ fontSize: '12px', fontWeight: '700' }}
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                        formatter={(value: number) => [formatCurrency(value), '']}
                                     />
                                     <Legend
                                         iconType="circle"
@@ -434,7 +459,7 @@ export default function Analytics() {
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight">{t('analytics.incomeVsExpense')}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">AYLIK KIYASLAMA</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('analytics.monthlyComparison')}</p>
                         </div>
                         <BarChart3 className="h-5 w-5 text-gray-400" />
                     </div>
@@ -454,7 +479,7 @@ export default function Analytics() {
                                     tick={{ fill: '#86868B' }}
                                     axisLine={false}
                                     tickLine={false}
-                                    tickFormatter={(v) => `$${v}`}
+                                    tickFormatter={(v) => formatCurrency(v).split('.')[0]}
                                 />
                                 <Tooltip
                                     contentStyle={{
@@ -467,7 +492,7 @@ export default function Analytics() {
                                     }}
                                     itemStyle={{ fontSize: '12px', fontWeight: '700' }}
                                     labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#86868B', marginBottom: '8px', textTransform: 'uppercase' }}
-                                    formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                    formatter={(value: number) => [formatCurrency(value), '']}
                                 />
                                 <Bar dataKey="income" name={t('analytics.income')} fill="#22c55e" radius={[10, 10, 10, 10]} barSize={20} />
                                 <Bar dataKey="expense" name={t('analytics.expense')} fill="#ef4444" radius={[10, 10, 10, 10]} barSize={20} />
@@ -486,7 +511,7 @@ export default function Analytics() {
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight">{t('analytics.accountDistribution')}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">VARLIK DAĞILIMI</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('analytics.assetDistribution')}</p>
                         </div>
                         <Calendar className="h-5 w-5 text-gray-400" />
                     </div>
@@ -519,7 +544,7 @@ export default function Analytics() {
                                             padding: '12px'
                                         }}
                                         itemStyle={{ fontSize: '12px', fontWeight: '700' }}
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                        formatter={(value: number) => [formatCurrency(value), '']}
                                     />
                                     <Legend
                                         iconType="circle"
@@ -547,7 +572,7 @@ export default function Analytics() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h3 className="text-lg font-bold text-[#1D1D1F] tracking-tight">{t('analytics.netSavingsTrend')}</h3>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">NET TASARRUF ANALİZİ</p>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">{t('analytics.netSavingsAnalysis')}</p>
                     </div>
                     <TrendingUp className="h-5 w-5 text-gray-400" />
                 </div>
@@ -573,7 +598,7 @@ export default function Analytics() {
                                 tick={{ fill: '#86868B' }}
                                 axisLine={false}
                                 tickLine={false}
-                                tickFormatter={(v) => `$${v}`}
+                                tickFormatter={(v) => formatCurrency(v).split('.')[0]}
                             />
                             <Tooltip
                                 contentStyle={{
@@ -586,7 +611,7 @@ export default function Analytics() {
                                 }}
                                 itemStyle={{ fontSize: '12px', fontWeight: '700' }}
                                 labelStyle={{ fontSize: '10px', fontWeight: '900', color: '#86868B', marginBottom: '8px', textTransform: 'uppercase' }}
-                                formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                                formatter={(value: number) => [formatCurrency(value), '']}
                             />
                             <Area type="monotone" dataKey="net" stroke="#8b5cf6" strokeWidth={3} fill="url(#netGradient)" name={t('analytics.netSavings')} />
                         </AreaChart>
