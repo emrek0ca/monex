@@ -14,6 +14,7 @@ import {
     ArrowDownRight
 } from 'lucide-react';
 import { useSubscriptionStore } from '@/store/subscriptionStore';
+import { useUserStore } from '@/store/userStore';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { UpgradeModal } from '../UI/UpgradeModal';
@@ -92,9 +93,9 @@ export function AIInsightsCard() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const insights = [
-        { type: 'warning', icon: AlertTriangle, text: 'Your food spending is 23% higher than last month.', color: 'text-amber-500' },
-        { type: 'success', icon: CheckCircle, text: 'Great job! You saved $340 more this month.', color: 'text-green-500' },
-        { type: 'tip', icon: Lightbulb, text: 'Consider reducing subscriptions to save $45/month.', color: 'text-blue-500' },
+        { type: 'warning', icon: AlertTriangle, text: t('premium.insights.foodHigh'), color: 'text-amber-500' },
+        { type: 'success', icon: CheckCircle, text: t('premium.insights.savingsGreat'), color: 'text-green-500' },
+        { type: 'tip', icon: Lightbulb, text: t('premium.insights.subsTip'), color: 'text-blue-500' },
     ];
 
     return (
@@ -207,16 +208,25 @@ export function FinancialHealthScore() {
 }
 
 export function PredictionsCard() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { user } = useUserStore();
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const predictions = [
-        { category: 'Food & Dining', predicted: 580, change: 12 },
-        { category: 'Transportation', predicted: 220, change: -8 },
-        { category: 'Entertainment', predicted: 150, change: 5 },
+        { category: t('premium.categories.food'), predicted: 580, change: 12 },
+        { category: t('premium.categories.transport'), predicted: 220, change: -8 },
+        { category: t('premium.categories.entertainment'), predicted: 150, change: 5 },
     ];
 
     const totalPredicted = predictions.reduce((acc, p) => acc + p.predicted, 0);
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+            style: 'currency',
+            currency: user?.currency === '₺' ? 'TRY' : (user?.currency === '€' ? 'EUR' : 'USD'),
+            currencyDisplay: 'narrowSymbol'
+        }).format(amount).replace('TRY', '₺').replace('EUR', '€').replace('USD', '$');
+    };
 
     return (
         <>
@@ -229,13 +239,13 @@ export function PredictionsCard() {
                 <div className="space-y-3">
                     <div className="text-center pb-2 mb-2 border-b">
                         <p className="text-xs text-muted-foreground">{t('premium.predictedSpend')}</p>
-                        <p className="text-xl font-bold">${totalPredicted}</p>
+                        <p className="text-xl font-bold">{formatCurrency(totalPredicted)}</p>
                     </div>
                     {predictions.map((pred, i) => (
                         <div key={i} className="flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">{pred.category}</span>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-medium">${pred.predicted}</span>
+                                <span className="text-xs font-medium">{formatCurrency(pred.predicted)}</span>
                                 <span className={`flex items-center text-[10px] ${pred.change > 0 ? 'text-red-500' : 'text-green-500'}`}>
                                     {pred.change > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                                     {Math.abs(pred.change)}%

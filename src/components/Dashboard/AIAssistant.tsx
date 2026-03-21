@@ -24,12 +24,26 @@ export function AIAssistant() {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [canSendMessage, setCanSendMessage] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
     const { user } = useUserStore();
     const { isPremium, canUseAI, decrementQueries, aiQueriesRemaining } = useSubscriptionStore();
 
     // Check if user can send messages
-    const canSendMessage = isPremium || canUseAI();
+    useEffect(() => {
+        const checkAIUsage = async () => {
+            if (isPremium) {
+                setCanSendMessage(true);
+                return;
+            }
+            const canUse = await canUseAI();
+            setCanSendMessage(canUse);
+        };
+        
+        if (isOpen) {
+            checkAIUsage();
+        }
+    }, [isOpen, isPremium, canUseAI, aiQueriesRemaining]);
 
     // Scroll to bottom when messages update
     useEffect(() => {
@@ -54,10 +68,13 @@ export function AIAssistant() {
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
-        // Check if user can use AI
-        if (!isPremium && !canUseAI()) {
-            setShowUpgradeModal(true);
-            return;
+        // Final check before sending
+        if (!isPremium) {
+            const canUse = await canUseAI();
+            if (!canUse) {
+                setShowUpgradeModal(true);
+                return;
+            }
         }
 
         const userMessage: Message = {
